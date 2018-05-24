@@ -12,7 +12,7 @@ See http://aging.brain-map.org/overview/home for more details about the data.
 R 3.4.1
 '
 ##
-# load libraries (requires prior installation of edgeR library from Bioconductor
+# load libraries
 library(data.table)    # i/o
 library(edgeR)         # DGE (also loads dependencies)
 library(plotly)        # Awesome 3D interactive plots 
@@ -73,7 +73,7 @@ add_markers() %>%
 layout(scene = list(xaxis = list(title = 'dim-1'),
                     yaxis = list(title = 'dim-2'),
                     zaxis = list(title = 'dim-3')),
-       title = 'MDS Plot, Shaded by Donor Sex')
+       title = 'MDS Plot of Gene Expression Profiles, Shaded by Donor Sex')
 htmlwidgets::saveWidget(as_widget(p_sex), "by_sex.html")
 
 # by brain region
@@ -88,5 +88,5 @@ add_markers() %>%
 layout(scene = list(xaxis = list(title = 'dim-1'),
                     yaxis = list(title = 'dim-2'),
                     zaxis = list(title = 'dim-3')),
-       title = 'MDS Plot, Shaded by Brain Region Sampled')
+       title = 'MDS Plotof Gene Expression Profiles, Shaded by Brain Region')
 htmlwidgets::saveWidget(as_widget(p_region), "by_region.html")
