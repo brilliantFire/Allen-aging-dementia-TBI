@@ -62,7 +62,7 @@ FPKM <- FPKM[,-1]
 raw_read_counts <- raw_read_counts[,-1]
 
 # Write to csv for later
-write.csv(raw_read_counts,'../data/raw_read_counts.csv')
+write.csv(raw_read_counts,'raw_read_counts.csv')
 write.csv(TPM,'TPM.csv')
 write.csv(FPKM,'FPKM.csv')
 

@@ -74,7 +74,7 @@ layout(scene = list(xaxis = list(title = 'dim-1'),
                     yaxis = list(title = 'dim-2'),
                     zaxis = list(title = 'dim-3')),
        title = 'MDS Plot of Gene Expression Profiles, Shaded by Donor Sex')
-htmlwidgets::saveWidget(as_widget(p_sex), "../data/by_sex.html")
+htmlwidgets::saveWidget(as_widget(p_sex), "by_sex.html")
 
 # by brain region
 p_region <- plot_ly(for_plots,
@@ -89,4 +89,4 @@ layout(scene = list(xaxis = list(title = 'dim-1'),
                     yaxis = list(title = 'dim-2'),
                     zaxis = list(title = 'dim-3')),
        title = 'MDS Plotof Gene Expression Profiles, Shaded by Brain Region')
-htmlwidgets::saveWidget(as_widget(p_region), "../data/by_region.html")
+htmlwidgets::saveWidget(as_widget(p_region), "by_region.html")
