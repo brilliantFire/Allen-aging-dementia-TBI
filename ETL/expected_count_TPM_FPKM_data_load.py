@@ -22,7 +22,7 @@ import time
 # load TBI_data_files.csv
 data_files = pd.read_csv('http://aging.brain-map.org/data/tbi_data_files.csv')
 
-# Series of links to files containing gene level estimated count/TPM/FPKM for each sample 
+# Series of links to files containing gene level estimated count/TPM/FPKM for each sample
 data_links = data_files['gene_level_fpkm_file_link']
 
 # Grab RNA-seq sample IDs (these will be the column names in the final DFs)
@@ -64,6 +64,6 @@ duration = stop - start
 # save to csv for later
 TPM.to_csv('TPM.csv')
 FPKM.to_csv('FPKM.csv')
-raw_read_counts.to_csv('raw_read_counts.csv')
+raw_read_counts.to_csv('../data/raw_read_counts.csv')
 
 print('All data loaded & saved! Loop duration:', np.round(duration, 2), 'seconds')
