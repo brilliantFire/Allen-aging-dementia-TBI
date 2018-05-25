@@ -3,6 +3,7 @@
 Differential Gene Expression Analysis ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 23 May 2018
+25 May 2018 - updated i/o to work with GitHub repo
 
 This script loads, cleans, filters, and normalizes counts. 3D plotly
 multidimensional scaling plots are created and saved as html.
@@ -15,10 +16,11 @@ R 3.4.1
 # load libraries
 library(data.table)    # i/o
 library(edgeR)         # DGE (also loads dependencies)
-library(plotly)        # Awesome 3D interactive plots
+library(plotly)        # Awesome 3D interactive plots 
 
-# load counts from local copy
-raw_read_counts <- data.frame(read.csv('../data/raw_read_counts.csv'))
+# load counts from copy in ../data
+setwd('..')
+raw_read_counts <- data.frame(read.csv('data/raw_read_counts.csv'))
 
 # make 'gene_id' row names
 rownames(raw_read_counts) <- raw_read_counts$gene_id
@@ -55,17 +57,17 @@ logFC_500 <- plotMDS(norm_counts,
                      ndim = 4)
 
 # make a dataframe with 4D coordinates + brain region, sex, & dementia status from sample_info
-for_plots <- data.frame(logFC_500$cmdscale.out)
+for_plots <- data.frame(logFC_500$cmdscale.out) 
 colnames(for_plots) <- c('dim1','dim2','dim3','dim4')
 for_plots$brain_region <- sample_info$structure_acronym
 for_plots$sex <- sample_info$sex
 for_plots$dementia_status <- sample_info$act_demented
 
-# plotly shaded by sex
-p_sex <- plot_ly(for_plots,
-                 x = ~dim1,
+# plotly plot shaded by sex & save as html widgets in ../data
+p_sex <- plot_ly(for_plots, 
+                 x = ~dim1, 
                  y = ~dim2,
-                 z = ~dim3,
+                 z = ~dim3, 
                  color = ~sex,
                  width = 700,
                  height = 700) %>%
@@ -73,14 +75,19 @@ add_markers() %>%
 layout(scene = list(xaxis = list(title = 'dim-1'),
                     yaxis = list(title = 'dim-2'),
                     zaxis = list(title = 'dim-3')),
-       title = 'MDS Plot of Gene Expression Profiles, Shaded by Donor Sex')
-htmlwidgets::saveWidget(as_widget(p_sex), "by_sex.html")
+       title = 'Gene Expression Profile MDS Plot, Shaded by Donor Sex')
+
+# saveWidgets has problems saving to dirs other than the current one
+# here's a workaround I found here:
+# https://stackoverflow.com/questions/41399795/savewidget-from-htmlwidget-in-r-cannot-save-html-file-in-another-folder
+temp_path <- 'data/plotly_mds_by_sex.html'
+htmlwidgets::saveWidget(as_widget(p_sex), file.path(normalizePath(dirname(temp_path)),basename(temp_path)))
 
 # by brain region
-p_region <- plot_ly(for_plots,
-                    x = ~dim1,
-                    y = ~dim2,
-                    z = ~dim3,
+p_region <- plot_ly(for_plots, 
+                    x = ~dim1, 
+                    y = ~dim2, 
+                    z = ~dim3, 
                     color = ~brain_region,
                     width = 700,
                     height = 700) %>%
@@ -88,5 +95,6 @@ add_markers() %>%
 layout(scene = list(xaxis = list(title = 'dim-1'),
                     yaxis = list(title = 'dim-2'),
                     zaxis = list(title = 'dim-3')),
-       title = 'MDS Plotof Gene Expression Profiles, Shaded by Brain Region')
-htmlwidgets::saveWidget(as_widget(p_region), "by_region.html")
+       title = 'Gene Expression Profile MDS Plot, Shaded by Brain Region')
+temp_path <- 'data/plotly_MDS_by_region.html'
+htmlwidgets::saveWidget(as_widget(p_sex), file.path(normalizePath(dirname(temp_path)),basename(temp_path)))

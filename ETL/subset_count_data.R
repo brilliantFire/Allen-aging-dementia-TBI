@@ -3,8 +3,9 @@
 Differential Gene Expression Analysis ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 24 May 2018
+25 May 2018 - updated i/o to work with GitHub repo
 
-This script splits the raw RNA-seq count data (loaded using the
+This script splits the raw RNA-seq count data (loaded using the 
 "expected_count_TPM_FPKM_data_load" script) into groups both by brain
 region and by donor sex. Outputs CSVs for each group that have the count
 data plus dementia status in the last row ([50284,]).
@@ -23,7 +24,8 @@ library(data.table)    # i/o
 '
 Load data
 '
-raw_read_counts <- data.frame(read.csv('/data/raw_read_counts.csv'))
+setwd('..')
+raw_read_counts <- data.frame(read.csv('data/raw_read_counts.csv'))
 
 # make 'gene_id' row names
 rownames(raw_read_counts) <- raw_read_counts$gene_id
@@ -67,32 +69,32 @@ female_counts <- matrix()
 
 # loops to collect samples
 for (i in 1:length(hip_list)){
-    sample <- raw_read_counts[which(colnames(raw_read_counts) == hip_list[i])]
+    sample <- raw_read_counts[which(colnames(raw_read_counts) == hip_list[i])] 
     hip_counts <- cbind(hip_counts, sample)
 }
 
 for (i in 1:length(fwm_list)){
-    sample <- raw_read_counts[which(colnames(raw_read_counts) == fwm_list[i])]
+    sample <- raw_read_counts[which(colnames(raw_read_counts) == fwm_list[i])] 
     fwm_counts <- cbind(fwm_counts, sample)
 }
 
 for (i in 1:length(pcx_list)){
-    sample <- raw_read_counts[which(colnames(raw_read_counts) == pcx_list[i])]
+    sample <- raw_read_counts[which(colnames(raw_read_counts) == pcx_list[i])] 
     pcx_counts <- cbind(pcx_counts, sample)
 }
 
 for (i in 1:length(tcx_list)){
-    sample <- raw_read_counts[which(colnames(raw_read_counts) == tcx_list[i])]
+    sample <- raw_read_counts[which(colnames(raw_read_counts) == tcx_list[i])] 
     tcx_counts <- cbind(tcx_counts, sample)
 }
 
 for (i in 1:length(male_list)){
-    sample <- raw_read_counts[which(colnames(raw_read_counts) == male_list[i])]
+    sample <- raw_read_counts[which(colnames(raw_read_counts) == male_list[i])] 
     male_counts <- cbind(male_counts, sample)
 }
 
 for (i in 1:length(female_list)){
-    sample <- raw_read_counts[which(colnames(raw_read_counts) == female_list[i])]
+    sample <- raw_read_counts[which(colnames(raw_read_counts) == female_list[i])] 
     female_counts <- cbind(female_counts, sample)
 }
 
@@ -106,7 +108,7 @@ male_counts <- male_counts[,-1]
 female_counts <- female_counts[,-1]
 
 '
-Get dementia statuses
+Get dementia statuses 
 '
 hip_status <- sample_info$act_demented[which(sample_info$structure_acronym == 'HIP')]
 fwm_status <- sample_info$act_demented[which(sample_info$structure_acronym == 'FWM')]
@@ -129,10 +131,10 @@ male_counts <- rbind(male_counts, male_status)
 female_counts <- rbind(female_counts, female_status)
 
 # write to csv in ../data
-write.csv(hip_counts, 'hip_counts_status.csv')
-write.csv(fwm_counts, 'fwm_counts_status.csv')
-write.csv(pcx_counts, 'pcx_counts_status.csv')
-write.csv(tcx_counts, 'tcx_counts_status.csv')
+write.csv(hip_counts, 'data/hip_counts_status.csv')
+write.csv(fwm_counts, 'data/fwm_counts_status.csv')
+write.csv(pcx_counts, 'data/pcx_counts_status.csv')
+write.csv(tcx_counts, 'data/tcx_counts_status.csv')
 
-write.csv(male_counts, 'male_counts_status.csv')
-write.csv(female_counts, 'female_counts_status.csv')
+write.csv(male_counts, 'data/male_counts_status.csv')
+write.csv(female_counts, 'data/female_counts_status.csv')

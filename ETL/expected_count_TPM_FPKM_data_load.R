@@ -3,6 +3,7 @@
 Load Unnormalized Expected Count, TPM, & FPKM Data ~ R version
 Rebecca Vislay Wade
 01 May 2018
+25 May 2018 - updated i/o to work with GitHub repo
 
 Loads gene expression data for 377 brain samples from the *Aging, Dementia, & TBI
 Study* from the Allen Institute for Brain Science. Saves resulting dataframes to
@@ -62,8 +63,9 @@ FPKM <- FPKM[,-1]
 raw_read_counts <- raw_read_counts[,-1]
 
 # Write to csv for later
-write.csv(raw_read_counts,'raw_read_counts.csv')
-write.csv(TPM,'TPM.csv')
-write.csv(FPKM,'FPKM.csv')
+setwd('..')
+write.csv(raw_read_counts,'data/raw_read_counts.csv')
+write.csv(TPM,'data/TPM.csv')
+write.csv(FPKM,'data/FPKM.csv')
 
 print(paste('All samples loaded & saved! Loop duration:', round(duration, 2), 'minutes'))

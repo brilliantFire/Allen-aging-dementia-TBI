@@ -3,6 +3,7 @@
 Load Unnormalized Expected Count, TPM, & FPKM Data ~ Python version
 Rebecca Vislay Wade
 01 May 2018
+25 May 2018 - updated i/o to work with GitHub repo
 
 Loads gene expression data for 377 brain samples from the *Aging, Dementia, & TBI
 Study* from the Allen Institute for Brain Science. Saves resulting dataframes to
@@ -10,7 +11,7 @@ Study* from the Allen Institute for Brain Science. Saves resulting dataframes to
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
-Python 3.6.2
+Python 3.6.5
 '''
 ##
 
@@ -18,11 +19,12 @@ Python 3.6.2
 import pandas as pd
 import numpy as np
 import time
+import os
 
 # load TBI_data_files.csv
 data_files = pd.read_csv('http://aging.brain-map.org/data/tbi_data_files.csv')
 
-# Series of links to files containing gene level estimated count/TPM/FPKM for each sample
+# Series of links to files containing gene level estimated count/TPM/FPKM for each sample 
 data_links = data_files['gene_level_fpkm_file_link']
 
 # Grab RNA-seq sample IDs (these will be the column names in the final DFs)
@@ -62,8 +64,9 @@ stop = time.clock()
 duration = stop - start
 
 # save to csv for later
-TPM.to_csv('TPM.csv')
-FPKM.to_csv('FPKM.csv')
-raw_read_counts.to_csv('../data/raw_read_counts.csv')
+os.chdir('..')
+TPM.to_csv('data/TPM.csv')
+FPKM.to_csv('data/FPKM.csv')
+raw_read_counts.to_csv('data/raw_read_counts.csv')
 
 print('All data loaded & saved! Loop duration:', np.round(duration, 2), 'seconds')
