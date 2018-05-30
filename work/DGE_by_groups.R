@@ -2,7 +2,7 @@
 '
 Differential Gene Expression Analysis ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
-24 May 2018
+25 May 2018
 
 This script identifies sets of differentially expressed genes in subsets
 of the Allen Aging, Dementia, and TBI RNA-seq dataset.
@@ -12,6 +12,8 @@ See http://aging.brain-map.org/overview/home for more details about the data.
 R 3.4.1
 '
 ##
+
+## NOT WORKING YET ##
 
 '
 Load libraries
@@ -23,7 +25,8 @@ library(plotly)        # Awesome 3D interactive plots
 '
 Load data
 '
-hip_counts <- read.csv('C:/Users/Rebecca/Documents/NU_MSPA/thesis/data/hip_counts_status.csv')
+setwd('..')
+hip_counts <- read.csv('data/hip_counts_status.csv')
 
 # make DGEList objects
 dgeList_hip <- DGEList(hip_counts, group = hip_status)
