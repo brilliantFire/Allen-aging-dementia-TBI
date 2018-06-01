@@ -3,6 +3,8 @@
 Differential Gene Expression Analysis ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 30 May 2018
+31 May 2018 - added corrected p-values; gets top 1000 genes; produces
+              summaries of gene expression difference classification
 
 This script identifies sets of differentially expressed genes in subsets
 of the Allen Aging, Dementia, and TBI RNA-seq dataset.
@@ -97,15 +99,27 @@ get_DEGs <- function(norm_counts, group, disp, ...){
     # perform Fisher's Exact Test
     x_test <- exactTest(norm_counts, pair = c('No Dementia' , 'Dementia'), dispersion = disp)
     # extract table & write to .csv in data folder
-    x_table <- x_test$table
+    x_table <- topTags(x_test, n=1000)
     saveRDS(x_table, file=paste('data/',group,'_exact_test_results_',disp,'.Rds',sep=''))
+    return(x_test)
 }
 
-get_DEGs(hip_norm, 'hip', 'auto')
-get_DEGs(fwm_norm, 'fwm', 'auto')
-get_DEGs(pcx_norm, 'pcx', 'auto')
-get_DEGs(tcx_norm, 'tcx', 'auto')
+hip_results <- get_DEGs(hip_norm, 'hip', 'auto', p.value = 0.05)
+fwm_results <- get_DEGs(fwm_norm, 'fwm', 'auto', p.value = 0.05)
+pcx_results <- get_DEGs(pcx_norm, 'pcx', 'auto', p.value = 0.05)
+tcx_results <- get_DEGs(tcx_norm, 'tcx', 'auto', p.value = 0.05)
 
+male_results <- get_DEGs(male_norm, 'male', 'auto', p.value = 0.05)
+female_results <- get_DEGs(female_norm, 'female', 'auto', p.value = 0.05)
 
-get_DEGs(male_norm, 'male', 'auto')
-get_DEGs(female_norm, 'female', 'auto')
+'
+Summaries
+'
+# summary of classification results for expression differences
+summary(decideTestsDGE(hip_results, p.value = 0.05))
+summary(decideTestsDGE(fwm_results, p.value = 0.05))
+summary(decideTestsDGE(pcx_results, p.value = 0.05))
+summary(decideTestsDGE(tcx_results, p.value = 0.05))
+
+summary(decideTestsDGE(male_results, p.value = 0.05))
+summary(decideTestsDGE(female_results, p.value = 0.05))
