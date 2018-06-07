@@ -3,12 +3,12 @@ Repo for loading and analyzing the data from the Allen Institute of Brain Scienc
 
 The `blog-notebooks` folder has some Jupyter notebooks I made in the process of blogging about this project. See [my Jekyll blog](http://blog.vislaywade.com/).  
 
-This project is being used to fulfill the requirements of the Master's in Predictive Analytics program from Northwestern University.  Thanks for checking it out :smile:
+This project is being used to fulfill the requirements of the Master's in Predictive Analytics program from Northwestern University.  Thanks for checking it out :heart:
 
-#### ETL
+#### ../ETL
 * *'expected_count_TPM_FPKM_load.py/.R'* - Loads data from study website (R and Python versions)  
 * *'subset_count_data.R'* - Subsets RNA-seq counts by brain region or donor sex   
 
-#### EDA  
+#### ../EDA
 * *'plotly_mds_plots_html.R'* - Generates HTMLwidget multidimensional scaling plots of RNA-seq data using the `plotly` library  
 * *'differential_expression_dispersions_exact_tests.R'* - hypothesis testing for differential gene expression  
