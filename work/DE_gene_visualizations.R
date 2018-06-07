@@ -2,7 +2,7 @@
 '
 Differential Gene Expression Analysis ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
-30 May 2018
+31 May 2018
 
 This script produces the following visualizations of differentially
 expressed genes identified in the XXX script...
@@ -12,8 +12,15 @@ See http://aging.brain-map.org/overview/home for more details about the data.
 R 3.4.1
 '
 ##
+
 '
-Load dataframes produced by DE_exact_tests.R script
+Load libraries
+'
+library(edgeR)
+library(gplots)
+
+'
+Load dataframes produced by DE_exact_tests.R script...
 '
 setwd('..')
 # load dataframes with normalized counts and dispersions
@@ -23,12 +30,12 @@ load_norm <- function(group, ...){
 }
 
 load_results <- function(group, disp, ...){
-    x_results <- readRDS(file=paste('data/',group,'_exact_test_results_',disp,'.Rds',sep=''))
+    x_results <- data.frame(readRDS(file=paste('data/',group,'_exact_test_results_',disp,'.Rds',sep='')))
     return(x_results)
 }
 
 hip_norm <- load_norm('hip')
-hip_results <- load_results('hip', 'auto')
+hip_results <- data.frame(load_results('hip', 'auto'))
 
 '
 BCVPlots
@@ -51,7 +58,7 @@ hip_bcv_plot <- bcv_plot(hip_norm)
 #female_bcv_plot <- bcv_plot(female_norm)
 
 '
-Summary statistics for top X DE genes
+Lists of significantly different genes & summary stats
 '
 # Function:
 #   1. Gets the names of genes with p-values from exact test below
@@ -59,33 +66,45 @@ Summary statistics for top X DE genes
 #   2. Provides:
 #       a. The number of significantly DE genes
 #       b. The percentage of genes that are significantly DE
-#       c. A summary of the number of upregulated/downregulated/NS
-#          ('not significant') genes
 
-# sort by PValue
-hip_common_table <- hip_common_table[order(hip_common_table$PValue),]
-hip_tagwise_table <- hip_tagwise_table[order(hip_tagwise_table$PValue),]
+get_sig_genes <- function(test_results, n_genes, alpha, ...){
+    # get names of genes with p <= p_value
+    x_names <- rownames(test_results)[test_results$FDR <= alpha]
+    # number of significant genes
+    num_genes <- length(x_names)
+    # percentage of total genes
+    per_total <- (length(x_names)/50283)*100
+    # print results
+    print(paste('Number of genes w/ FDR <= ', alpha,': ', num_genes, sep=''))
+    print(paste('Percentage of total # genes: ', round(per_total, 2), sep=''))
+    # return list
+    return(list(x_names, num_genes, per_total))
+}
 
-# Names of genes where the p-value is significant at the 0.01 level
-names_hip_common <- unlist(rownames(hip_common_table)[hip_common_table$PValue <= 0.01])
-names_hip_tagwise <- rownames(hip_tagwise_table)[hip_tagwise_table$PValue <= 0.01]
-
-# number of DEGs
-length(names_hip_common)
-length(names_hip_tagwise)
-
-# decideTestsDGE classifies the fold change metrics in the table as up, down, or NS;
-# uses correction for repeated measures that controls the false discovery rate 
-# (expected proportion of false discoveries among rejected hypotheses).
-hip_common_decide <- decideTestsDGE(hip_common_test, p.value = 0.01)
-
+hip_genes <- get_sig_genes(hip_results, 500, 0.05)
 
 '
-Count histograms for the top 100 DE genes
+Count histograms for the top however-many DE genes
 '
-hist(results_common[diff_genes_common[1:100],"logCPM"], 
+hist(hip_results[unlist(hip_genes[1:200]),'logCPM'], 
      breaks=25, 
-     xlab="Log Concentration (CPM)", 
-     col="darkgreen", 
+     xlab='Log Concentration (CPM)', 
+     col='darkgreen', 
      freq=FALSE, 
-     main="Common: Top 100")
+     main='Hippocampus: Top 200')
+
+'
+MA plots
+'
+plotSmear(hip_norm, 
+          de.tags=hip_genes, 
+          main='Hippocampus', 
+          pair = c('No Dementia' , 'Dementia'),
+          cex = .35,
+          xlab='Log Concentration (CPM)', 
+          ylab='Log Fold-Change')
+abline(h = c(-1, 1), col = "darkmagenta", lwd = 3)
+
+'
+TPM heatmaps
+'
