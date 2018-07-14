@@ -44,7 +44,7 @@ dementia_status <- t(sample_info$act_demented)
 # puts counts into 'counts' & group into 'samples'
 DGE_list <- DGEList(raw_read_counts, group = dementia_status)
 
-# filter counts
+# filter counts for sufficient expression
 filtered_counts <- DGE_list[rowSums(1e+06*DGE_list$counts/expandAsMatrix(DGE_list$samples$lib.size, dim(raw_read_counts))>2)>=10,]
 
 # calculate normalization factors
@@ -62,6 +62,8 @@ colnames(for_plots) <- c('dim1','dim2','dim3','dim4')
 for_plots$brain_region <- sample_info$structure_acronym
 for_plots$sex <- sample_info$sex
 for_plots$dementia_status <- sample_info$act_demented
+for_plots$num_tbi <- sample_info$num_tbi_w_loc
+for_plots$ever_tbi <- sample_info$ever_tbi_w_loc
 
 # plotly plot shaded by sex & save as html widgets in ../data
 p_sex <- plot_ly(for_plots, 

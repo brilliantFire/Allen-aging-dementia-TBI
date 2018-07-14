@@ -1,0 +1,37 @@
+INFO [2018-07-12 15:42:40] [[1]]
+INFO [2018-07-12 15:42:40] list(hip_genes = hip_genes, fwm_genes = fwm_genes, pcx_genes = pcx_genes, 
+INFO [2018-07-12 15:42:40]     tcx_genes = tcx_genes)
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $filename
+INFO [2018-07-12 15:42:40] [1] "data/venn_brain_region_0.02_10000.png"
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $imagetype
+INFO [2018-07-12 15:42:40] [1] "png"
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $fill
+INFO [2018-07-12 15:42:40] c("red", "blue", "green", "purple")
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $alpha
+INFO [2018-07-12 15:42:40] c(0.3, 0.3, 0.3, 0.3)
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $cex
+INFO [2018-07-12 15:42:40] [1] 0.9
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $fontfamily
+INFO [2018-07-12 15:42:40] [1] "sans"
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $cat.fontfamily
+INFO [2018-07-12 15:42:40] [1] "sans"
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $category.names
+INFO [2018-07-12 15:42:40] c("hippocampus", "forebrain WM", "parietal ctx", "temporal ctx")
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $main.fontfamily
+INFO [2018-07-12 15:42:40] [1] "sans"
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $main
+INFO [2018-07-12 15:42:40] [1] ""
+INFO [2018-07-12 15:42:40] 
+INFO [2018-07-12 15:42:40] $margin
+INFO [2018-07-12 15:42:40] [1] 0.1
+INFO [2018-07-12 15:42:40] 

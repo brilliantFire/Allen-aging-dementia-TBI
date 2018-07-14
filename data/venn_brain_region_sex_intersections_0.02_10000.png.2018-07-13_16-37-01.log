@@ -1,0 +1,33 @@
+INFO [2018-07-13 16:37:01] [[1]]
+INFO [2018-07-13 16:37:01] list(intersection_genes_sex = intersection_genes_sex, intersection_genes = intersection_genes)
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $filename
+INFO [2018-07-13 16:37:01] [1] "data/venn_brain_region_sex_intersections_0.02_10000.png"
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $imagetype
+INFO [2018-07-13 16:37:01] [1] "tiff"
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $fill
+INFO [2018-07-13 16:37:01] c("red", "blue")
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $alpha
+INFO [2018-07-13 16:37:01] c(0.3, 0.3)
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $cex
+INFO [2018-07-13 16:37:01] [1] 1
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $fontfamily
+INFO [2018-07-13 16:37:01] [1] "sans"
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $cat.fontfamily
+INFO [2018-07-13 16:37:01] [1] "sans"
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $category.names
+INFO [2018-07-13 16:37:01] c("donor sex", "brain region")
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $main.fontfamily
+INFO [2018-07-13 16:37:01] [1] "sans"
+INFO [2018-07-13 16:37:01] 
+INFO [2018-07-13 16:37:01] $main
+INFO [2018-07-13 16:37:01] [1] "Dementia Intersection DEGs ~ Donor Sex & Brain Region"
+INFO [2018-07-13 16:37:01] 

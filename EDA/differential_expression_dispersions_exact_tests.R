@@ -65,7 +65,7 @@ prep_count_mat <- function(group, filter_counts, filter_samples, ...){
     # 8. Estimate tagwise ("gene-wise") dispersions
     x_norm <- estimateGLMTagwiseDisp(x_norm)
     # save object to .Rds file
-    saveRDS(x_norm,file=paste('data/',group,'_norm_counts_disp.Rds',sep=''))
+    saveRDS(x_norm,file=paste('data/',group,'_norm_counts_disp_high_low.Rds',sep=''))
     # also return it for hypothesis tests below
     return(x_norm)
 }
@@ -86,31 +86,33 @@ Hypothesis testing/DEG hunt
 #   1. norm_counts = output from prep_count_mat function above
 #   2. group = hip, fwm, pcx, tcx, male, or female
 #   3. disp = common, trended, tagwise, or auto (auto pick the most complex dispersion available)
+# Returns the results of the exact test and save .Rds copy of the top 1000 genes
 test_genes <- function(norm_counts, group, disp, ...){
     # perform Fisher's Exact Test
     x_test <- exactTest(norm_counts, pair = c('No Dementia' , 'Dementia'), dispersion = disp)
     # extract table & write to .csv in data folder
-    x_table <- topTags(x_test, n=1000)
-    saveRDS(x_table, file=paste('data/',group,'_exact_test_results_',disp,'.Rds',sep=''))
+    x_table <- topTags(x_test, n = 10000, p.value = 0.02, adjust.method = 'BH', sort.by = 'PValue')
+    saveRDS(x_table, file=paste('data/',group,'_exact_test_results_p.02_high_low_',disp,'.Rds',sep=''))
     return(x_test)
 }
 
-hip_results <- test_genes(hip_norm, 'hip', 'auto', p.value = 0.05)
-fwm_results <- test_genes(fwm_norm, 'fwm', 'auto', p.value = 0.05)
-pcx_results <- test_genes(pcx_norm, 'pcx', 'auto', p.value = 0.05)
-tcx_results <- test_genes(tcx_norm, 'tcx', 'auto', p.value = 0.05)
 
-male_results <- test_genes(male_norm, 'male', 'auto', p.value = 0.05)
-female_results <- test_genes(female_norm, 'female', 'auto', p.value = 0.05)
+hip_results <- test_genes(hip_norm, 'hip', 'auto')
+fwm_results <- test_genes(fwm_norm, 'fwm', 'auto')
+pcx_results <- test_genes(pcx_norm, 'pcx', 'auto')
+tcx_results <- test_genes(tcx_norm, 'tcx', 'auto')
+
+male_results <- test_genes(male_norm, 'male', 'auto')
+female_results <- test_genes(female_norm, 'female', 'auto')
 
 '
 Summaries
 '
 # summary of classification results for expression differences
-summary(decideTestsDGE(hip_results, p.value = 0.01))
-summary(decideTestsDGE(fwm_results, p.value = 0.01))
-summary(decideTestsDGE(pcx_results, p.value = 0.01))
-summary(decideTestsDGE(tcx_results, p.value = 0.01))
+summary(decideTestsDGE(hip_results, p.value = 0.02))
+summary(decideTestsDGE(fwm_results, p.value = 0.02))
+summary(decideTestsDGE(pcx_results, p.value = 0.02))
+summary(decideTestsDGE(tcx_results, p.value = 0.02))
 
-summary(decideTestsDGE(male_results, p.value = 0.01))
-summary(decideTestsDGE(female_results, p.value = 0.01))
+summary(decideTestsDGE(male_results, p.value = 0.02))
+summary(decideTestsDGE(female_results, p.value = 0.02))
