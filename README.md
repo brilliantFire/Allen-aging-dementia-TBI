@@ -12,3 +12,4 @@ This project is being used to fulfill the requirements of the Master's in Predic
 #### ../EDA
 * *'plotly_mds_plots_html.R'* - Generates [HTMLwidget multidimensional scaling plots](http://blog.vislaywade.com/interactive-MDS-plots-w-plotly/) of RNA-seq data using the `plotly` library  
 * *'differential_expression_dispersions_exact_tests.R'* - hypothesis testing for differential gene expression  
+* *'differential_expression_visualizations.R'* - visualizations & analysis of differential analysis results
