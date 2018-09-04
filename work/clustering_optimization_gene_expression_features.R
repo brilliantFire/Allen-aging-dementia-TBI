@@ -3,36 +3,53 @@
 Feature Engineering & Data Preparation ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 13 Jul 2018 - Created
-31 Aug 2018 - clValid
+31 Aug 2018 - clValid tests
+02 Sep 2018 - mygene annotation list function
 
 This script performs hierarchical clustering on expression levels for subsets of genes...
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
-R 3.4.3
+R 3.4.1
 '
 ##
-
-'
-Load libraries
-'
-library(edgeR)          # DGE library from Bioconductor
-library(data.table)     # I/O
-library(dplyr)          # Entering the TIDYVERSE!
-library(gplots)         # heatmaps, extracting from Venn diagrams
-library(reshape2)       # split open and melt dataframes
-library(cluster)
 
 setwd('..')
 
 '
+Install packages & load libraries
+'
+### ~*~*~*~* RUN THIS SECTION ONLY ONCE *~*~*~*~ ###
+source('https://bioconductor.org/biocLite.R')
+biocLite()
+
+# install clValid & dependencies from CRAN
+install.packages(c('clValid', 'cluster', 'mclust', 'kohonen'), repo='https://CRAN.R-project.org/')
+
+# 'mygene' - for constructing lists of functional classes
+biocLite(c('Biobase', 'annotate', 'GO.db', 'mygene'))
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+
+# load libraries
+library(clValid)        # Also loads dependencies
+library(Biobase)        # For biological validation
+library(annotate)       # For biological validation
+library(GO.db)          # For biological validation
+library(mygene)         # To query mygene.info for functional annotation
+library(data.table)     # I/O
+library(dplyr)          # Entering the TIDYVERSE!
+library(gplots)         # heatmap.2
+
+'
 Load data
 '
+# load normalized FPKM values, sample info, DE gene lists for brain regions
 fpkm_table <- readRDS(file='data/normalized_fpkm_matrix.Rds')
 sample_info <- readRDS(file='data/sample_info.Rds')
 brain_reg_sig_genes <- readRDS(file='data/brain_reg_sig_genes.Rds')
 genes <- readRDS(file='data/genes.Rds')
 
+# pull out individual brain region DE gene lists
 hip_genes <- brain_reg_sig_genes$hip_genes
 fwm_genes <- brain_reg_sig_genes$fwm_genes
 pcx_genes <- brain_reg_sig_genes$pcx_genes
@@ -40,24 +57,422 @@ tcx_genes <- brain_reg_sig_genes$tcx_genes
 
 sample_dementia_status <-  sample_info[, c('rnaseq_profile_id', 'act_demented')]
 
-'
-Heatmaps/clustering for filtered genes, all samples
-'
-# make a numeric matrix
+# make FPKM numeric matrix
 fpkm_mat <- as.matrix(fpkm_table)
 class(fpkm_mat) <- 'numeric'
 
 # standardize
 fpkm_standard_mat <- t(scale(t(fpkm_mat)))
 
-# get all brain group sig genes
-all_sig_genes <- unique(c(hip_genes, fwm_genes, pcx_genes, tcx_genes))
+# subset FPKM matrix by brain region
+hip_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'HIP')]
+hip_data <- fpkm_standard_mat[hip_genes, colnames(fpkm_standard_mat) %in% hip_samples]
+
+fwm_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'FWM')]
+fwm_data <- fpkm_standard_mat[fwm_genes, colnames(fpkm_standard_mat) %in% fwm_samples]
+
+pcx_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'PCx')]
+pcx_data <- fpkm_standard_mat[pcx_genes, colnames(fpkm_standard_mat) %in% pcx_samples]
+
+tcx_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'TCx')]
+tcx_data <- fpkm_standard_mat[tcx_genes, colnames(fpkm_standard_mat) %in% tcx_samples]
+
+'
+Gene ontology lists from mygene.info database
+'
+# query mygene.info ElasticSearch database to grab gene ontology info for Entrez IDs
+hip_query <- queryMany(rownames(hip_data), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+fwm_query <- queryMany(rownames(fwm_data), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+pcx_query <- queryMany(rownames(pcx_data), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+tcx_query <- queryMany(rownames(tcx_data), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+
+# take a look at the first few entries for HIP
+head(hip_query, 10)
+
+# pull out Entrez Gene IDs
+hip_entrez <- hip_query$query
+fwm_entrez <- fwm_query$query
+pcx_entrez <- pcx_query$query
+tcx_entrez <- tcx_query$query
+
+# take a look at a few individual gene ontology records; 
+#CC for gene #1, HIP samples (Entrez Gene #25937, WWTR1)
+hip_query[1, 'go.CC'][[1]]
+# MF for gene #1
+hip_query[1, 'go.MF'][[1]]
+# BP for gene #1
+hip_query[1, 'go.BP'][[1]]
+
+# for gene #70 (Entrez Gene #23580, CDC42EP4)
+hip_query[70, 'go.CC'][[1]]
+hip_query[70, 'go.MF'][[1]]
+hip_query[70, 'go.BP'][[1]]
+
+# loops to extract most common functional category for each gene for three ontologies:
+#    CC = cellular component
+#    MF = molecular function
+#    BP = biological process
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+hip_cc <- NULL
+hip_mf <- NULL
+hip_bp <- NULL
+for(i in 1:length(hip_genes)){
+    # each if-else checks each 'term' list's length and, if zero, marks as 'unknown'.
+    # if not zero, returns the most common term
+    if(length(hip_query[i, 'go.CC'][[1]]$term) == 0){
+        a_hip_cc <- 'unknown'
+    }
+    else{
+        a_hip_cc <- tail(names(sort(table(hip_query[i, 'go.CC'][[1]]$term))), 1)
+    } 
+    hip_cc <- c(hip_cc, a_hip_cc)
+    
+    if(length(hip_query[i, 'go.MF'][[1]]$term) == 0){
+        a_hip_mf <- 'unknown'
+    }
+    else{
+        a_hip_mf <- tail(names(sort(table(hip_query[i, 'go.MF'][[1]]$term))), 1)
+    } 
+    hip_mf <- c(hip_mf, a_hip_mf)
+        
+    if(length(hip_query[i, 'go.BP'][[1]]$term) == 0){
+        a_hip_bp <- 'unknown'
+    }
+    else{
+        a_hip_bp <- tail(names(sort(table(hip_query[i, 'go.BP'][[1]]$term))), 1)
+    } 
+    hip_bp <- c(hip_bp, a_hip_bp)
+}
+
+hip_fc <- data.frame(cbind(hip_cc, hip_mf, hip_bp))
+rownames(hip_fc) <- hip_entrez
+colnames(hip_fc) <- c('CC', 'MF', 'BP')
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+fwm_cc <- NULL
+fwm_mf <- NULL
+fwm_bp <- NULL
+for(i in 1:length(fwm_genes)){
+    if(length(fwm_query[i, 'go.CC'][[1]]$term) == 0){
+        a_fwm_cc <- 'unknown'
+    }
+    else{
+        a_fwm_cc <- tail(names(sort(table(fwm_query[i, 'go.CC'][[1]]$term))), 1)
+    } 
+    fwm_cc <- c(fwm_cc, a_fwm_cc)
+    
+    if(length(fwm_query[i, 'go.MF'][[1]]$term) == 0){
+        a_fwm_mf <- 'unknown'
+    }
+    else{
+        a_fwm_mf <- tail(names(sort(table(fwm_query[i, 'go.MF'][[1]]$term))), 1)
+    } 
+    fwm_mf <- c(fwm_mf, a_fwm_mf)
+        
+    if(length(fwm_query[i, 'go.BP'][[1]]$term) == 0){
+        a_fwm_bp <- 'unknown'
+    }
+    else{
+        a_fwm_bp <- tail(names(sort(table(fwm_query[i, 'go.BP'][[1]]$term))), 1)
+    } 
+    fwm_bp <- c(fwm_bp, a_fwm_bp)
+}
+
+fwm_fc <- data.frame(cbind(fwm_cc, fwm_mf, fwm_bp))
+rownames(fwm_fc) <- fwm_entrez
+colnames(fwm_fc) <- c('CC', 'MF', 'BP')
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+pcx_cc <- NULL
+pcx_mf <- NULL
+pcx_bp <- NULL
+for(i in 1:length(pcx_genes)){
+    if(length(pcx_query[i, 'go.CC'][[1]]$term) == 0){
+        a_pcx_cc <- 'unknown'
+    }
+    else{
+        a_pcx_cc <- tail(names(sort(table(pcx_query[i, 'go.CC'][[1]]$term))), 1)
+    } 
+    pcx_cc <- c(pcx_cc, a_pcx_cc)
+    
+    if(length(pcx_query[i, 'go.MF'][[1]]$term) == 0){
+        a_pcx_mf <- 'unknown'
+    }
+    else{
+        a_pcx_mf <- tail(names(sort(table(pcx_query[i, 'go.MF'][[1]]$term))), 1)
+    } 
+    pcx_mf <- c(pcx_mf, a_pcx_mf)
+        
+    if(length(pcx_query[i, 'go.BP'][[1]]$term) == 0){
+        a_pcx_bp <- 'unknown'
+    }
+    else{
+        a_pcx_bp <- tail(names(sort(table(pcx_query[i, 'go.BP'][[1]]$term))), 1)
+    } 
+    pcx_bp <- c(pcx_bp, a_pcx_bp)
+}
+
+pcx_fc <- data.frame(cbind(pcx_cc, pcx_mf, pcx_bp))
+rownames(pcx_fc) <- pcx_entrez
+colnames(pcx_fc) <- c('CC', 'MF', 'BP')
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+tcx_cc <- NULL
+tcx_mf <- NULL
+tcx_bp <- NULL
+for(i in 1:length(tcx_genes)){
+    if(length(tcx_query[i, 'go.CC'][[1]]$term) == 0){
+        a_tcx_cc <- 'unknown'
+    }
+    else{
+        a_tcx_cc <- tail(names(sort(table(tcx_query[i, 'go.CC'][[1]]$term))), 1)
+    } 
+    tcx_cc <- c(tcx_cc, a_tcx_cc)
+    
+    if(length(tcx_query[i, 'go.MF'][[1]]$term) == 0){
+        a_tcx_mf <- 'unknown'
+    }
+    else{
+        a_tcx_mf <- tail(names(sort(table(tcx_query[i, 'go.MF'][[1]]$term))), 1)
+    } 
+    tcx_mf <- c(tcx_mf, a_tcx_mf)
+        
+    if(length(tcx_query[i, 'go.BP'][[1]]$term) == 0){
+        a_tcx_bp <- 'unknown'
+    }
+    else{
+        a_tcx_bp <- tail(names(sort(table(tcx_query[i, 'go.BP'][[1]]$term))), 1)
+    } 
+    tcx_bp <- c(tcx_bp, a_tcx_bp)
+}
+
+tcx_fc <- data.frame(cbind(tcx_cc, tcx_mf, tcx_bp))
+rownames(tcx_fc) <- tcx_entrez
+colnames(tcx_fc) <- c('CC', 'MF', 'BP')
+
+# Specific gene ontology list generation
+# ~*~*~*~*~*~*~* Cellular Component (CC) *~*~*~*~*~*~*~* #
+hip_fc_cc <- tapply(rownames(hip_data), hip_fc$CC, c)
+fwm_fc_cc <- tapply(rownames(fwm_data), fwm_fc$CC, c)
+pcx_fc_cc <- tapply(rownames(pcx_data), pcx_fc$CC, c)
+tcx_fc_cc <- tapply(rownames(tcx_data), tcx_fc$CC, c)
+
+# ~*~*~*~*~*~*~* Molecular Function (MF) *~*~*~*~*~*~*~* #
+hip_fc_mf <- tapply(rownames(hip_data), hip_fc$MF, c)
+fwm_fc_mf <- tapply(rownames(fwm_data), fwm_fc$MF, c)
+pcx_fc_mf <- tapply(rownames(pcx_data), pcx_fc$MF, c)
+tcx_fc_mf <- tapply(rownames(tcx_data), tcx_fc$MF, c)
+
+# ~*~*~*~*~*~*~* Biological Process (BP) *~*~*~*~*~*~*~* #
+hip_fc_bp <- tapply(rownames(hip_data), hip_fc$BP, c)
+fwm_fc_bp <- tapply(rownames(fwm_data), fwm_fc$BP, c)
+pcx_fc_bp <- tapply(rownames(pcx_data), pcx_fc$BP, c)
+tcx_fc_bp <- tapply(rownames(tcx_data), tcx_fc$BP, c)
+
+'
+Clustering Experiment Functions
+'
+# exp01: Internal metrics only experiment
+exp01 <- function(data, genes, k_range, clust_algos, metric, method){
+    valid01 <- clValid(data, 
+                       k_range, 
+                       clMethods = clust_algos, 
+                       validation = 'internal',
+                       maxitems = length(genes),
+                       metric = metric,
+                       method = method,
+                       verbose = FALSE)
+    return(valid01)
+}
+
+# exp02: Stability metrics added
+exp02 <- function(data, genes, k_range, clust_algos, metric, method){
+    valid02 <- clValid(data, 
+                       k_range,
+                       clMethods = clust_algos,
+                       validation = c('internal', 'stability'),
+                       maxitems = length(genes),
+                       metric = metric,
+                       method = method,
+                       verbose = FALSE)
+    return(valid02)
+}
+
+# exp03: Biological validation using custom FC list
+exp03 <- function(data, genes, k_range, clust_algos, valid_metrics, metric, method, fc_list){
+    valid03 <- clValid(data,
+                       k_range,
+                       clMethods = clust_algos,
+                       validation = valid_metrics, 
+                       maxitems = length(genes),
+                       metric = metric,
+                       method = method,
+                       annotation = fc_list,
+                       verbose = FALSE)
+    return(valid03)
+}
+
+'
+Clustering Experiments
+'
+linkages <- c('complete', 'average', 'ward')
+distances <- c('correlation', 'euclidean')
+algos <- c('hierarchical', 'clara', 'model')
+
+### SERIES 1: INTERNAL & BIOLOGICAL VALIDATION ONLY, 3 ONTOLOGIES
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+hip_results01 <- NULL
+hip_conditions01 <- NULL
+counter <- 1
+ontologies <- c('hip_fc_cc', 'hip_fc_mf', 'hip_fc_bp')
+
+start_hip <- Sys.time()
+
+for(linkage in linkages){
+    for(distance in distances){
+        for(ontology in ontologies){
+            hip_conditions01[[counter]] <- list(distance = distance,
+                                                linkage = linkage,
+                                                ontology = ontology)
+            exp <- exp03(hip_data, hip_genes, 2:12, algos, c('internal', 'biological'), distance, linkage, eval(parse(text = ontology)))
+            hip_results01[counter] <- list(optimalScores(exp))
+            counter <- counter + 1
+            print(paste('Finished', distance, 'distance,', linkage, 'linkage,', ontology, 'ontology experiment.'))
+            flush.console()
+        }
+    }
+}
+
+# save results and conditions to data folder
+saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
+saveRDS(hip_conditions01, file='data/hip_clustering_conditions01.Rds')
+
+stop_hip <- Sys.time()
+duration_hip <- stop_hip-start_hip
+print(paste('Experiment duration:', duration_hip))
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+linkages <- c('complete', 'average', 'ward')
+distances <- c('euclidean')
+algos <- c('hierarchical', 'clara', 'model')
+
+fwm_results01 <- NULL
+fwm_conditions01 <- NULL
+counter <- 1
+ontologies <- c('fwm_fc_cc', 'fwm_fc_mf', 'fwm_fc_bp')
+
+start_fwm <- Sys.time()
+
+for(linkage in linkages){
+    for(distance in distances){
+        for(ontology in ontologies){
+            fwm_conditions01[[counter]] <- list(distance = distance,
+                                                linkage = linkage,
+                                                ontology = ontology)
+            exp <- exp03(fwm_data, fwm_genes, 2:12, algos, c('internal', 'biological'), distance, linkage, eval(parse(text = ontology)))
+            fwm_results01[counter] <- list(optimalScores(exp))
+            counter <- counter + 1
+            print(paste('Finished', distance, 'distance,', linkage, 'linkage,', ontology, 'ontology experiment.'))
+            flush.console()
+        }
+    }
+}
+
+# save results and conditions to data folder
+saveRDS(fwm_results01, file='data/fwm_clustering_results01.Rds')
+saveRDS(fwm_conditions01, file='data/fwm_clustering_conditions01.Rds')
+
+stop_fwm <- Sys.time()
+duration_fwm <- stop_fwm-start_fwm
+print(paste('Experiment duration:', duration_fwm))
+
+### SERIES 2: VARY LINKAGES & DISTANCES, INTERNAL ONLY
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+hip_results02 <- NULL
+counter <- 1
+
+for(linkage in linkages){
+    for(distance in distances){
+        exp <- exp01(hip_data, hip_genes, 2:4, algos, distance, linkage)
+        hip_results02[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
+        flush.console()
+    }
+}
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+fwm_results02 <- NULL
+counter <- 1
+
+for(linkage in linkages){
+    for(distance in distances){
+        exp <- exp01(fwm_data, fwm_genes, 2:4, algos, distance, linkage)
+        fwm_results02[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
+        flush.console()
+    }
+}
+
+### SERIES 3: INTERNAL + STABILITY (BOOTSTRAP) METRICS
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+hip_results03 <- NULL
+counter <- 1
+
+for(linkage in linkages){
+    for(distance in distances){
+        exp <- exp02(hip_data, hip_genes, 2:4, algos, distance, linkage)
+        hip_results03[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
+        flush.console()
+    }
+}
+hip_results03
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+fwm_results03 <- NULL
+counter <- 1
+
+for(linkage in linkages){
+    for(distance in distances){
+        exp <- exp02(fwm_data, fwm_genes, 2:4, algos, distance, linkage)
+        fwm_results03[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
+        flush.console()
+    }
+}
+fwm_results03
 
 
-set.seed(420)
 
+
+
+
+
+
+
+
+
+
+##########
+plot(test, measure = "Dunn", legendLoc = "topleft")
+
+hc <- clusters(test, "hierarchical")
+fc_labels <- factor(hip_fc$CC)
+plot(hc, labels = fc_labels)
+
+
+
+seven <- cutree(hc, 7)
+hip_clusters <- xtabs(~hip_fc$CC + seven)
+
+'
+Heatmaps
+'
 # To specify a different linkage type: heatmap.2(...,hclustfun = function(x) hclust(x,method = 'centroid'),...)
-
 # heatmap for TCx sig genes
 tcx_hm <- heatmap.2(fpkm_standard_mat[tcx_genes, sample(ncol(fpkm_standard_mat), 377)],
                     hclustfun = function(x) hclust(x,method = 'ward.D2'),
@@ -80,214 +495,3 @@ tcx_hm <- heatmap.2(fpkm_standard_mat[tcx_genes, sample(ncol(fpkm_standard_mat),
                     ylab='genes',
                     labRow=FALSE,
                     labCol=FALSE)
-#dev.off()
-
-# pull gene dendrogram
-tcx_dendro <- tcx_hm$rowDendrogram
-
-# brute force: distance matrix
-tcx_dist <- as.dist(1-cor(t(fpkm_standard_mat[tcx_genes, sample(ncol(fpkm_standard_mat), 377)])))
-# cluster
-tcx_cluster <- hclust(tcx_dist,method = 'complete')
-
-'
-Clustering Optimization
-'
-source('https://bioconductor.org/biocLite.R')
-biocLite('GenomicAlignments')
-
-# 'org.Hs.eg.db' - Entrez Gene identifier-based annotation
-# 'mygene' - for constructing lists of functional classes
-biocLite(c('Biobase', 'annotate', 'GO.db', 'org.Hs.eg.db', 'mygene'))
-
-# install clValid from CRAN
-install.packages('clValid', repo='https://CRAN.R-project.org/')
-
-# load libraries
-library(Biobase)
-library(annotate)
-library(GO.db)
-library(org.Hs.eg.db)
-library(mygene)
-library(clValid)
-
-# HIP FPKM subset
-hip_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'HIP')]
-hip_data <- fpkm_standard_mat[hip_genes, colnames(fpkm_standard_mat) %in% hip_samples]
-
-'
-Gene ontology lists from mygene.info database
-'
-# gene ontology info for Entrez IDs
-hip_res <- queryMany(rownames(hip_data), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
-
-# take a look at the first few entries
-head(hip_res, 10)
-
-# pull out Entrez Gene IDs & symbols
-hip_entrez <- hip_res$query
-hip_symbols <- hip_res$symbol
-
-# take a look at a few individual gene ontology records; CC for gene #1 (Entrez Gene #25937, WWTR1)
-hip_res[1, 'go.CC'][[1]]
-# MF for gene #1
-hip_res[1, 'go.MF'][[1]]
-# BP for gene #1
-hip_res[1, 'go.BP'][[1]]
-
-# for gene #70 (Entrez Gene #23580, CDC42EP4)
-hip_res[70, 'go.CC'][[1]]
-hip_res[70, 'go.MF'][[1]]
-hip_res[70, 'go.BP'][[1]]
-
-# extracts most common functional category for each gene for three ontologies:
-#    CC = cellular component
-#    MF = molecular function
-#    BP = biological process
-hip_cc <- NULL
-hip_mf <- NULL
-hip_bp <- NULL
-for(i in 1:length(hip_genes)){
-    # each if-else checks each 'term' list's length and, if zero, marks as 'unknown'.
-    # if not zero, returns the most common function
-    if(length(hip_res[i, 'go.CC'][[1]]$term) == 0){
-        a_hip_cc <- 'unknown'
-    }
-    else{
-        a_hip_cc <- tail(names(sort(table(hip_res[i, 'go.CC'][[1]]$term))), 1)
-    } 
-    hip_cc <- c(hip_cc, a_hip_cc)
-    
-    if(length(hip_res[i, 'go.MF'][[1]]$term) == 0){
-        a_hip_mf <- 'unknown'
-    }
-    else{
-        a_hip_mf <- tail(names(sort(table(hip_res[i, 'go.MF'][[1]]$term))), 1)
-    } 
-    hip_mf <- c(hip_mf, a_hip_mf)
-        
-    if(length(hip_res[i, 'go.BP'][[1]]$term) == 0){
-        a_hip_bp <- 'unknown'
-    }
-    else{
-        a_hip_bp <- tail(names(sort(table(hip_res[i, 'go.BP'][[1]]$term))), 1)
-    } 
-    hip_bp <- c(hip_bp, a_hip_bp)
-}
-
-hip_fc <- data.frame(cbind(hip_cc, hip_mf, hip_bp))
-rownames(hip_fc) <- hip_entrez
-colnames(hip_fc) <- c('CC', 'MF', 'BP')
-
-hip_fc_cc <- tapply(rownames(hip_data), hip_fc$CC, c)
-
-'
-Clustering Optimization
-'
-hip_valid <- clValid(hip_data, 2:50, 
-                     clMethods = c('hierarchical', 'kmeans', 'diana', 'pam', 'clara', 'model'), 
-                     validation = c('internal', 'stability', 'biological'),
-                     maxitems = length(hip_genes),
-                     metric = 'euclidean',
-                     method = 'complete',
-                     annotation = hip_fc_cc,
-                     verbose = TRUE)
-summary(hip_valid)
-optimalScores(hip_valid)
-
-##########
-plot(test, measure = "Dunn", legendLoc = "topleft")
-
-hc <- clusters(test, "hierarchical")
-fc_labels <- factor(hip_fc$CC)
-plot(hc, labels = fc_labels)
-
-
-
-seven <- cutree(hc, 7)
-hip_clusters <- xtabs(~hip_fc$CC + seven)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-'
-Exact tests for all genes, all samples
-'
-# Load & prep raw read counts
-counts <- data.frame(read.csv('data/raw_read_counts.csv'))
-rownames(counts) <- counts$gene_id
-counts$gene_id <- NULL
-colnames(counts) <- substring(colnames(counts), 2)
-counts <- as.matrix(round(counts,0))
-class(counts) <- 'numeric'
-
-# get dementia status
-counts_samples <- colnames(counts)
-dementia_status <- sample_dementia_status$act_demented[sample_dementia_status$rnaseq_profile_id %in% counts_samples]
-
-##
-# DGEList() object
-all_dgeList <- DGEList(counts, group = dementia_status)
-
-# filter
-all_filtered <- all_dgeList[rowSums(1e+06*all_dgeList$counts/expandAsMatrix(all_dgeList$samples$lib.size, dim(counts))>2)>=10,]
-print(paste('Number of genes left after filtering: ', dim(all_filtered)[1]))
-
-# calcNormFactors()
-all_norm <- calcNormFactors(all_filtered)
-
-# estimateGLMCommonDisp(), estimateGLMTrendedDisp(), estimateGLMTagwiseDisp()
-all_norm <- estimateGLMCommonDisp(all_norm, verbose = TRUE)
-all_norm <- estimateGLMTrendedDisp(all_norm)
-all_norm <- estimateGLMTagwiseDisp(all_norm)
-
-# Exact tests
-all_test <- exactTest(all_norm, pair = c('No Dementia' , 'Dementia'), dispersion = 'auto')
-
-# top tags
-all_table <- topTags(all_test, n = 10000, p.value = 0.0001, adjust.method = 'BH', sort.by = 'PValue')
-top_genes <- rownames(all_table$table)
-
-# standardize
-fpkm_standard <- t(scale(t(fpkm_table)))
-
-# heatmap
-heatmap.2(fpkm_standard[top_genes , sample(ncol(fpkm_standard), 377)],
-          hclustfun = function(x) hclust(x, method = 'complete'),
-          distfun = function(x) dist(x,method='euclidean'),
-          col=colorpanel(20, 
-                         low = 'red', 
-                         mid = 'white',
-                         high = 'blue'),
-          na.rm=TRUE,
-          scale='none',
-          trace = 'none', 
-          dendrogram = 'both', 
-          key = TRUE, 
-          key.title = 'Key',
-          cexRow = 0.4,
-          cexCol = 0.4,
-          margins = c(1.5,1.5),
-          xlab='samples',
-          ylab='genes',
-          labRow=FALSE,
-          labCol=FALSE)
-
-# gene list
-sig_genes <- genes[genes$gene_entrez_id %in% top_genes,]
