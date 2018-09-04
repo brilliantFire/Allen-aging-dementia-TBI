@@ -3,12 +3,13 @@
 Feature Engineering & Data Preparation ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 13 Jul 2018 - Created
+31 Aug 2018 - clValid
 
 This script performs hierarchical clustering on expression levels for subsets of genes...
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
-R 3.4.1
+R 3.4.3
 '
 ##
 
@@ -18,10 +19,8 @@ Load libraries
 library(edgeR)          # DGE library from Bioconductor
 library(data.table)     # I/O
 library(dplyr)          # Entering the TIDYVERSE!
-library(VennDiagram)    # Venn diagrams with loads of graphical control
 library(gplots)         # heatmaps, extracting from Venn diagrams
 library(reshape2)       # split open and melt dataframes
-library(ggplot2)        # other graphics
 library(cluster)
 
 setwd('..')
@@ -91,46 +90,66 @@ tcx_dist <- as.dist(1-cor(t(fpkm_standard_mat[tcx_genes, sample(ncol(fpkm_standa
 # cluster
 tcx_cluster <- hclust(tcx_dist,method = 'complete')
 
-# install clValid package from CRAN repo
-install.packages('clValid', repos='http://cran.us.r-project.org')
-install.packages('kohonen', repos='http://cran.us.r-project.org')
-install.packages('mclust', repos='http://cran.us.r-project.org')
-library(clValid)
-library(kohonen)
-library(mclust)
+'
+Clustering Optimization
+'
+source('https://bioconductor.org/biocLite.R')
+biocLite('GenomicAlignments')
 
-# get annotation packages from Bioconductor
-source('http://bioconductor.org/biocLite.R')
-biocLite(c('Biobase', 'annotate', 'GO.db'))
-biocLite('org.Hs.eg.db') # Entrez Gene identifier-based annotation
-biocLite('mygene')       # for functional classes
+# 'org.Hs.eg.db' - Entrez Gene identifier-based annotation
+# 'mygene' - for constructing lists of functional classes
+biocLite(c('Biobase', 'annotate', 'GO.db', 'org.Hs.eg.db', 'mygene'))
 
-# HIP FPKM subset
-hip_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'HIP')]
-hip_data <- fpkm_standard_mat[hip_genes, colnames(fpkm_standard_mat) %in% hip_samples]
+# install clValid from CRAN
+install.packages('clValid', repo='https://CRAN.R-project.org/')
 
-# trying out clValid
+# load libraries
 library(Biobase)
 library(annotate)
 library(GO.db)
 library(org.Hs.eg.db)
 library(mygene)
+library(clValid)
 
+# HIP FPKM subset
+hip_samples <- sample_info$rnaseq_profile_id[which(sample_info$structure_acronym == 'HIP')]
+hip_data <- fpkm_standard_mat[hip_genes, colnames(fpkm_standard_mat) %in% hip_samples]
+
+'
+Gene ontology lists from mygene.info database
+'
 # gene ontology info for Entrez IDs
-hip_res <- queryMany(rownames(hip_data), scopes='entrezgene', fields=c('entrezgene', 'go', 'symbol'), species='human')
+hip_res <- queryMany(rownames(hip_data), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
 
-hip_res$go.CC[which(hip_res$go.CC == 'NULL')] <- 'term'
+# take a look at the first few entries
+head(hip_res, 10)
 
-hip_res$go.CC <- lapply(hip_res$go.CC, function(z) { z[ lengths(z) == 0 ] <- list(term = 'unknown'); z; })
+# pull out Entrez Gene IDs & symbols
+hip_entrez <- hip_res$query
+hip_symbols <- hip_res$symbol
 
+# take a look at a few individual gene ontology records; CC for gene #1 (Entrez Gene #25937, WWTR1)
+hip_res[1, 'go.CC'][[1]]
+# MF for gene #1
+hip_res[1, 'go.MF'][[1]]
+# BP for gene #1
+hip_res[1, 'go.BP'][[1]]
 
-# extract most common FC for a single gene
-tail(names(sort(table(res[100, 'go.MF'][[1]]$term))), 1)
+# for gene #70 (Entrez Gene #23580, CDC42EP4)
+hip_res[70, 'go.CC'][[1]]
+hip_res[70, 'go.MF'][[1]]
+hip_res[70, 'go.BP'][[1]]
 
+# extracts most common functional category for each gene for three ontologies:
+#    CC = cellular component
+#    MF = molecular function
+#    BP = biological process
 hip_cc <- NULL
 hip_mf <- NULL
 hip_bp <- NULL
 for(i in 1:length(hip_genes)){
+    # each if-else checks each 'term' list's length and, if zero, marks as 'unknown'.
+    # if not zero, returns the most common function
     if(length(hip_res[i, 'go.CC'][[1]]$term) == 0){
         a_hip_cc <- 'unknown'
     }
@@ -157,32 +176,33 @@ for(i in 1:length(hip_genes)){
 }
 
 hip_fc <- data.frame(cbind(hip_cc, hip_mf, hip_bp))
-rownames(hip_fc) <- hip_res$entrezgene
+rownames(hip_fc) <- hip_entrez
 colnames(hip_fc) <- c('CC', 'MF', 'BP')
 
-hip_fc$CC[hip_fc$CC == 'cytosol'] = 'cytoplasm'
-fc <- tapply(rownames(hip_data), hip_fc$CC, c)
-fc <- fc[!names(fc) %in% c('unknown')]
+hip_fc_cc <- tapply(rownames(hip_data), hip_fc$CC, c)
 
+'
+Clustering Optimization
+'
+hip_valid <- clValid(hip_data, 2:50, 
+                     clMethods = c('hierarchical', 'kmeans', 'diana', 'pam', 'clara', 'model'), 
+                     validation = c('internal', 'stability', 'biological'),
+                     maxitems = length(hip_genes),
+                     metric = 'euclidean',
+                     method = 'complete',
+                     annotation = hip_fc_cc,
+                     verbose = TRUE)
+summary(hip_valid)
+optimalScores(hip_valid)
 
-test <- clValid(hip_data, 2:20, 
-                clMethods = c('hierarchical'), 
-                validation = 'biological',
-                maxitems = length(hip_genes),
-                metric = 'correlation',
-                method = 'complete',
-                annotation = fc,
-                #GOcategory = 'all',
-                verbose = TRUE)
-summary(test)
-
-plot(test, measure = "BHI", legendLoc = "topleft")
+##########
+plot(test, measure = "Dunn", legendLoc = "topleft")
 
 hc <- clusters(test, "hierarchical")
 fc_labels <- factor(hip_fc$CC)
 plot(hc, labels = fc_labels)
 
-optimalScores(test)
+
 
 seven <- cutree(hc, 7)
 hip_clusters <- xtabs(~hip_fc$CC + seven)
