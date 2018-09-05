@@ -319,8 +319,9 @@ linkages <- c('complete', 'average', 'ward')
 distances <- c('correlation', 'euclidean')
 algos <- c('hierarchical', 'clara', 'model')
 
-### SERIES 1: INTERNAL & BIOLOGICAL VALIDATION ONLY, 3 ONTOLOGIES
+### SERIES 1
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+### Internal & biological validation metrics, all 3 ontologies
 hip_results01 <- NULL
 hip_conditions01 <- NULL
 counter <- 1
@@ -352,6 +353,7 @@ duration_hip <- stop_hip-start_hip
 print(paste('Experiment duration:', duration_hip))
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+# Internal metrics only
 linkages <- c('complete', 'average', 'ward')
 distances <- c('euclidean')
 algos <- c('hierarchical', 'clara', 'model')
@@ -365,16 +367,13 @@ start_fwm <- Sys.time()
 
 for(linkage in linkages){
     for(distance in distances){
-        for(ontology in ontologies){
-            fwm_conditions01[[counter]] <- list(distance = distance,
-                                                linkage = linkage,
-                                                ontology = ontology)
-            exp <- exp03(fwm_data, fwm_genes, 2:12, algos, c('internal', 'biological'), distance, linkage, eval(parse(text = ontology)))
-            fwm_results01[counter] <- list(optimalScores(exp))
-            counter <- counter + 1
-            print(paste('Finished', distance, 'distance,', linkage, 'linkage,', ontology, 'ontology experiment.'))
-            flush.console()
-        }
+        fwm_conditions01[[counter]] <- list(distance = distance,
+                                            linkage = linkage)
+        exp <- exp01(fwm_data, fwm_genes, 2:12, algos, distance, linkage)
+        fwm_results01[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
+        flush.console()
     }
 }
 
@@ -386,65 +385,39 @@ stop_fwm <- Sys.time()
 duration_fwm <- stop_fwm-start_fwm
 print(paste('Experiment duration:', duration_fwm))
 
-### SERIES 2: VARY LINKAGES & DISTANCES, INTERNAL ONLY
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
-hip_results02 <- NULL
-counter <- 1
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
 
-for(linkage in linkages){
-    for(distance in distances){
-        exp <- exp01(hip_data, hip_genes, 2:4, algos, distance, linkage)
-        hip_results02[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
-        flush.console()
-    }
-}
 
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
-fwm_results02 <- NULL
-counter <- 1
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
 
-for(linkage in linkages){
-    for(distance in distances){
-        exp <- exp01(fwm_data, fwm_genes, 2:4, algos, distance, linkage)
-        fwm_results02[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
-        flush.console()
-    }
-}
 
-### SERIES 3: INTERNAL + STABILITY (BOOTSTRAP) METRICS
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
-hip_results03 <- NULL
-counter <- 1
 
-for(linkage in linkages){
-    for(distance in distances){
-        exp <- exp02(hip_data, hip_genes, 2:4, algos, distance, linkage)
-        hip_results03[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
-        flush.console()
-    }
-}
-hip_results03
 
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
-fwm_results03 <- NULL
-counter <- 1
 
-for(linkage in linkages){
-    for(distance in distances){
-        exp <- exp02(fwm_data, fwm_genes, 2:4, algos, distance, linkage)
-        fwm_results03[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage experiment.'))
-        flush.console()
-    }
-}
-fwm_results03
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
