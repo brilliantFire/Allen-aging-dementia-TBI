@@ -6,7 +6,18 @@ Rebecca Vislay Wade
 31 Aug 2018 - clValid tests
 02 Sep 2018 - mygene annotation list function
 
-This script performs hierarchical clustering on expression levels for subsets of genes...
+This script uses the clValid package to run clustering experiments on normalized
+FPKM gene expression values for each of the four regions of the brain in the 
+dataset. It uses `mygene` to access gene ontology info in the `mygene.info`
+ElasticSearch database and creates three ontology lists for each brain region:
+    1. Cellular Component (CC)
+    2. Molecular Function (MF)
+    3. Biological Process (BP)
+Clustering algorithms tested include agglomerative hierarchical clustering, CLARA,
+and mixture model-based clustering. The "best" clustering strategies are initially
+chosen on the basis of "internal" metrics (connectivity, silhouette width, Dunn 
+index) then run with annotation lists to generate measures of biological
+homogeneity.
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
@@ -354,14 +365,13 @@ print(paste('Experiment duration:', duration_hip))
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
 # Internal metrics only
-linkages <- c('complete', 'average', 'ward')
-distances <- c('euclidean')
+linkages <- c('average', 'ward')
+distances <- c('correlation', 'euclidean')
 algos <- c('hierarchical', 'clara', 'model')
 
 fwm_results01 <- NULL
 fwm_conditions01 <- NULL
 counter <- 1
-ontologies <- c('fwm_fc_cc', 'fwm_fc_mf', 'fwm_fc_bp')
 
 start_fwm <- Sys.time()
 
@@ -369,7 +379,7 @@ for(linkage in linkages){
     for(distance in distances){
         fwm_conditions01[[counter]] <- list(distance = distance,
                                             linkage = linkage)
-        exp <- exp01(fwm_data, fwm_genes, 2:12, algos, distance, linkage)
+        exp <- exp01(fwm_data, fwm_genes, 8:20, algos, distance, linkage)
         fwm_results01[counter] <- list(optimalScores(exp))
         counter <- counter + 1
         print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
