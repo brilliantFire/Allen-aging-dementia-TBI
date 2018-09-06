@@ -430,7 +430,7 @@ print(paste('Experiment duration:', duration_fwm01))
 fwm_results02 <- NULL
 fwm_conditions02 <- NULL
 algos <- c('hierarchical', 'clara')
-linkages <- c('average', 'ward')
+linkages <- c('ward')
 
 counter <- 1
 
@@ -441,7 +441,7 @@ start_fwm02 <- Sys.time()
 for(annotation in annotations){
     for(linkage in linkages){
         fwm_conditions02[[counter]] <- list(annotation = annotation)
-        exp <- exp03(fwm_data, fwm_genes, 10:13, algos, 
+        exp <- exp03(fwm_data, fwm_genes, 6:8, algos, 
                      c('internal', 'biological'), 'euclidean', linkage, 
                      eval(parse(text = annotation)))
         fwm_results02[counter] <- list(optimalScores(exp))

@@ -325,15 +325,11 @@ exp03 <- function(data, genes, k_range, clust_algos, valid_metrics, metric, meth
 '
 Clustering Experiments
 '
-linkages <- c('complete', 'average', 'ward')
-distances <- c('correlation', 'euclidean')
-algos <- c('hierarchical', 'clara', 'model')
-
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
-linkages <- c('average', 'ward')
-distances <- c('correlation', 'euclidean')
-algos <- c('hierarchical', 'clara', 'model')
+linkages <- 'ward'
+distances <- 'euclidean'
+algos <- c('hierarchical', 'diana', 'clara', 'model')
 
 hip_results01 <- NULL
 hip_conditions01 <- NULL
@@ -341,50 +337,32 @@ counter <- 1
 
 start_hip01 <- Sys.time()
 
-for(linkage in linkages){
-    for(distance in distances){
-        hip_conditions01[[counter]] <- list(distance = distance,
-                                            linkage = linkage)
-        exp <- exp01(hip_data, hip_genes, 4:20, algos, distance, linkage)
-        hip_results01[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
-        flush.console()
-    }
-}
+hip_results01 <- exp01(hip_data, hip_genes, 2:20, algos, 'euclidean', 'ward')
 
 # save results and conditions to data folder
 saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
-saveRDS(hip_conditions01, file='data/hip_clustering_conditions01.Rds')
 
 stop_hip01 <- Sys.time()
 duration_hip01 <- stop_hip01-start_hip01
-print(paste('Experiment duration:', round(duration_hip01,2))
+print(paste('Experiment duration:', round(duration_hip01, 2)))
+
+# plot silhouette widths
+plot(hip_results01, measure = 'Silhouette', legendLoc = 'topright')
+optimalScores(hip_results01)
 
 ####################### Biological metrics #######################
-hip_results02 <- NULL
-hip_conditions02 <- NULL
-algos <- c('hierarchical', 'clara', 'model')
-linkages <- c('average', 'ward')
+algos <- 'model'
+linkages <- 'ward'
 
 counter <- 1
+hip_results02 <- NULL
+hip_conditions02 <- NULL
 
 annotations <- c('hip_fc_cc', 'hip_fc_mf', 'hip_fc_bp')
 
 start_hip02 <- Sys.time()
 
-for(annotation in annotations){
-    for(linkage in linkages){
-        hip_conditions02[[counter]] <- list(annotation = annotation)
-        exp <- exp03(hip_data, hip_genes, 3:6, algos, 
-                     c('internal', 'biological'), 'euclidean', linkage, 
-                     eval(parse(text = annotation)))
-        hip_results02[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', linkage, 'linkage,', annotation, 'experiment.'))
-        flush.console()
-    }
-}
+hip_results02 <- exp03()
 
 # save results and conditions to data folder
 saveRDS(hip_results02, file='data/hip_clustering_results02.Rds')
@@ -430,7 +408,7 @@ print(paste('Experiment duration:', duration_fwm01))
 fwm_results02 <- NULL
 fwm_conditions02 <- NULL
 algos <- c('hierarchical', 'clara')
-linkages <- c('average', 'ward')
+linkages <- c('ward')
 
 counter <- 1
 
@@ -441,7 +419,7 @@ start_fwm02 <- Sys.time()
 for(annotation in annotations){
     for(linkage in linkages){
         fwm_conditions02[[counter]] <- list(annotation = annotation)
-        exp <- exp03(fwm_data, fwm_genes, 10:13, algos, 
+        exp <- exp03(fwm_data, fwm_genes, 6:8, algos, 
                      c('internal', 'biological'), 'euclidean', linkage, 
                      eval(parse(text = annotation)))
         fwm_results02[counter] <- list(optimalScores(exp))
