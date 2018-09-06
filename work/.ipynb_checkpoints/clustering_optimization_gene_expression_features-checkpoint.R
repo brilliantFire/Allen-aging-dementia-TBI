@@ -476,7 +476,7 @@ for(linkage in linkages){
     for(distance in distances){
         pcx_conditions01[[counter]] <- list(distance = distance,
                                             linkage = linkage)
-        exp <- exp01(pcx_data, pcx_genes, 8:16, algos, distance, linkage)
+        exp <- exp01(pcx_data, pcx_genes, 6:16, algos, distance, linkage)
         pcx_results01[counter] <- list(optimalScores(exp))
         counter <- counter + 1
         print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
@@ -492,7 +492,38 @@ stop_pcx01 <- Sys.time()
 duration_pcx01 <- stop_pcx01-start_pcx01
 print(paste('Experiment duration:', duration_pcx01))
 
+####################### Biological metrics #######################
+pcx_results02 <- NULL
+pcx_conditions02 <- NULL
+algos <- c('hierarchical', 'clara')
+linkages <- c('average', 'ward')
 
+counter <- 1
+
+annotations <- c('pcx_fc_cc', 'pcx_fc_mf', 'pcx_fc_bp')
+
+start_pcx02 <- Sys.time()
+
+for(annotation in annotations){
+    for(linkage in linkages){
+        pcx_conditions02[[counter]] <- list(annotation = annotation)
+        exp <- exp03(pcx_data, pcx_genes, 10:13, algos, 
+                     c('internal', 'biological'), 'euclidean', linkage, 
+                     eval(parse(text = annotation)))
+        pcx_results02[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', linkage, 'linkage,', annotation, 'experiment.'))
+        flush.console()
+    }
+}
+
+# save results and conditions to data folder
+saveRDS(pcx_results02, file='data/pcx_clustering_results02.Rds')
+saveRDS(pcx_conditions02, file='data/pcx_clustering_conditions02.Rds')
+
+stop_pcx02 <- Sys.time()
+duration_pcx02 <- stop_pcx02-start_pcx02
+print(paste('Experiment duration:', round(duration_pcx02,2)))
 
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
