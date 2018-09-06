@@ -1,6 +1,6 @@
 ##
 '
-Feature Engineering & Data Preparation ~ Allen Aging, Dementia, & TBI Data
+Gene Expression Feature Engineering/Clustering ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 13 Jul 2018 - Created
 31 Aug 2018 - clValid tests
@@ -15,8 +15,7 @@ ElasticSearch database and creates three ontology lists for each brain region:
     3. Biological Process (BP)
 Clustering algorithms tested include agglomerative hierarchical clustering, CLARA,
 and mixture model-based clustering. The "best" clustering strategies are initially
-chosen on the basis of "internal" metrics (connectivity, silhouette width, Dunn 
-index) then run with annotation lists to generate measures of biological
+chosen on the basis of silhouette width then run with annotation lists to generate measures of biological
 homogeneity.
 
 See http://aging.brain-map.org/overview/home for more details about the data.
@@ -490,7 +489,7 @@ saveRDS(pcx_conditions01, file='data/pcx_clustering_conditions01.Rds')
 
 stop_pcx01 <- Sys.time()
 duration_pcx01 <- stop_pcx01-start_pcx01
-print(paste('Experiment duration:', duration_pcx01))
+print(paste('Experiment duration:', round(duration_pcx01,2))
 
 ####################### Biological metrics #######################
 pcx_results02 <- NULL
