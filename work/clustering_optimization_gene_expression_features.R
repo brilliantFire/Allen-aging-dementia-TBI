@@ -330,27 +330,27 @@ linkages <- c('complete', 'average', 'ward')
 distances <- c('correlation', 'euclidean')
 algos <- c('hierarchical', 'clara', 'model')
 
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
-### Internal & biological validation metrics, all 3 ontologies
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
+####################### Internal metrics only #######################
+linkages <- c('average', 'ward')
+distances <- c('correlation', 'euclidean')
+algos <- c('hierarchical', 'clara', 'model')
+
 hip_results01 <- NULL
 hip_conditions01 <- NULL
 counter <- 1
-ontologies <- c('hip_fc_cc', 'hip_fc_mf', 'hip_fc_bp')
 
-start_hip <- Sys.time()
+start_hip01 <- Sys.time()
 
 for(linkage in linkages){
     for(distance in distances){
-        for(ontology in ontologies){
-            hip_conditions01[[counter]] <- list(distance = distance,
-                                                linkage = linkage,
-                                                ontology = ontology)
-            exp <- exp03(hip_data, hip_genes, 2:12, algos, c('internal', 'biological'), distance, linkage, eval(parse(text = ontology)))
-            hip_results01[counter] <- list(optimalScores(exp))
-            counter <- counter + 1
-            print(paste('Finished', distance, 'distance,', linkage, 'linkage,', ontology, 'ontology experiment.'))
-            flush.console()
-        }
+        hip_conditions01[[counter]] <- list(distance = distance,
+                                            linkage = linkage)
+        exp <- exp01(hip_data, hip_genes, 4:20, algos, distance, linkage)
+        hip_results01[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
+        flush.console()
     }
 }
 
@@ -358,11 +358,44 @@ for(linkage in linkages){
 saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
 saveRDS(hip_conditions01, file='data/hip_clustering_conditions01.Rds')
 
-stop_hip <- Sys.time()
-duration_hip <- stop_hip-start_hip
-print(paste('Experiment duration:', duration_hip))
+stop_hip01 <- Sys.time()
+duration_hip01 <- stop_hip01-start_hip01
+print(paste('Experiment duration:', round(duration_hip01,2))
 
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+####################### Biological metrics #######################
+hip_results02 <- NULL
+hip_conditions02 <- NULL
+algos <- c('hierarchical', 'clara', 'model')
+linkages <- c('average', 'ward')
+
+counter <- 1
+
+annotations <- c('hip_fc_cc', 'hip_fc_mf', 'hip_fc_bp')
+
+start_hip02 <- Sys.time()
+
+for(annotation in annotations){
+    for(linkage in linkages){
+        hip_conditions02[[counter]] <- list(annotation = annotation)
+        exp <- exp03(hip_data, hip_genes, 3:6, algos, 
+                     c('internal', 'biological'), 'euclidean', linkage, 
+                     eval(parse(text = annotation)))
+        hip_results02[counter] <- list(optimalScores(exp))
+        counter <- counter + 1
+        print(paste('Finished', linkage, 'linkage,', annotation, 'experiment.'))
+        flush.console()
+    }
+}
+
+# save results and conditions to data folder
+saveRDS(hip_results02, file='data/hip_clustering_results02.Rds')
+saveRDS(hip_conditions02, file='data/hip_clustering_conditions02.Rds')
+
+stop_hip02 <- Sys.time()
+duration_hip02 <- stop_hip02-start_hip02
+print(paste('Experiment duration:', round(duration_hip02,2)))
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
 linkages <- c('average', 'ward')
 distances <- c('correlation', 'euclidean')
@@ -427,7 +460,7 @@ stop_fwm02 <- Sys.time()
 duration_fwm02 <- stop_fwm02-start_fwm02
 print(paste('Experiment duration:', round(duration_fwm02,2)))
 
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
 linkages <- c('average', 'ward')
 distances <- c('correlation', 'euclidean')
@@ -443,7 +476,7 @@ for(linkage in linkages){
     for(distance in distances){
         pcx_conditions01[[counter]] <- list(distance = distance,
                                             linkage = linkage)
-        exp <- exp01(pcx_data, pcx_genes, 8:20, algos, distance, linkage)
+        exp <- exp01(pcx_data, pcx_genes, 8:16, algos, distance, linkage)
         pcx_results01[counter] <- list(optimalScores(exp))
         counter <- counter + 1
         print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
