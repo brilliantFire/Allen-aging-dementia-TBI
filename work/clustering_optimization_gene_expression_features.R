@@ -1,6 +1,6 @@
 ##
 '
-Gene Expression Feature Engineering/Clustering ~ Allen Aging, Dementia, & TBI Data
+Gene Expression Feature Engineering Experiments ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 13 Jul 2018 - Created
 31 Aug 2018 - clValid tests
@@ -384,6 +384,7 @@ optimalScores(hip_results02_bp)
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
+### EXPERIMENT #1: k = 2:15
 algos <- c('hierarchical', 'diana', 'clara', 'model')
 
 start_fwm01 <- Sys.time()
@@ -398,46 +399,78 @@ print(paste('Experiment duration:', round(duration_fwm01, 2)))
 saveRDS(fwm_results01, file='data/fwm_clustering_results01.Rds')
 
 # plot silhouette widths
-plot(fwm_results01, measure = 'Silhouette', legendLoc = 'topright')
+plot(fwm_results01, measure = 'Silhouette', 
+     main = 'Internal Validation - k = 2:15', 
+     legendLoc = 'topright')
 
 # best scores
 optimalScores(fwm_results01)
 
-####################### Biological metrics #######################
-algos <- c('diana', 'clara')
+### EXPERIMENT #2: k = 15:25
+algos <- c('hierarchical', 'diana', 'clara', 'model')
 
 start_fwm02 <- Sys.time()
 
-fwm_results02_cc <- exp03(fwm_data, fwm_genes, 2:7, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', fwm_fc_cc)
-
-fwm_results02_mf <- exp03(fwm_data, fwm_genes, 2:7, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', fwm_fc_mf)
-
-fwm_results02_bp <- exp03(fwm_data, fwm_genes, 2:7, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', fwm_fc_bp)
+fwm_results02 <- exp01(fwm_data, fwm_genes, 15:25, algos, 'euclidean', 'ward')
 
 stop_fwm02 <- Sys.time()
 duration_fwm02 <- stop_fwm02-start_fwm02
-print(paste('Experiment duration:', round(duration_fwm02,2)))
+print(paste('Experiment duration:', round(duration_fwm02, 2)))
 
 # save results and conditions to data folder
-saveRDS(fwm_results02_cc, file='data/fwm_clustering_results02_cc.Rds')
-saveRDS(fwm_results02_mf, file='data/fwm_clustering_results02_mf.Rds')
-saveRDS(fwm_results02_bp, file='data/fwm_clustering_results02_bp.Rds')
+saveRDS(fwm_results02, file='data/fwm_clustering_results02.Rds')
 
 # plot silhouette widths
-plot(fwm_results02_cc, measure = 'BHI', main = 'Biological Validation - CC', legendLoc = 'topleft')
-plot(fwm_results02_mf, measure = 'BHI', main = 'Biological Validation - MF', legendLoc = 'topleft')
-plot(fwm_results02_bp, measure = 'BHI', main = 'Biological Validation - BP', legendLoc = 'topright')
+plot(fwm_results02, measure = 'Silhouette', 
+     main = 'Internal Validation - k = 15:25',
+     legendLoc = 'topright')
 
 # best scores
-optimalScores(fwm_results02_cc)
-optimalScores(fwm_results02_mf)
-optimalScores(fwm_results02_bp)
+optimalScores(fwm_results02)
+
+####################### Biological metrics #######################
+algos <- c('diana', 'clara')
+
+start_fwm03 <- Sys.time()
+
+fwm_results03_cc <- exp03(fwm_data, fwm_genes, 2:6, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', fwm_fc_cc)
+
+stop_fwm03 <- Sys.time()
+duration_fwm03 <- stop_fwm03-start_fwm03
+print(paste('Experiment #1 duration:', round(duration_fwm03,2)))
+
+fwm_results03_mf <- exp03(fwm_data, fwm_genes, 2:5, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', fwm_fc_mf)
+
+stop_fwm03 <- Sys.time()
+duration_fwm03 <- stop_fwm03-start_fwm03
+print(paste('Experiment #2 duration:', round(duration_fwm03,2)))
+
+fwm_results03_bp <- exp03(fwm_data, fwm_genes, 2:5, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', fwm_fc_bp)
+
+stop_fwm03 <- Sys.time()
+duration_fwm03 <- stop_fwm03-start_fwm03
+print(paste('Experiment #3 duration:', round(duration_fwm03,2)))
+
+# save results and conditions to data folder
+saveRDS(fwm_results03_cc, file='data/fwm_clustering_results03_cc.Rds')
+saveRDS(fwm_results03_mf, file='data/fwm_clustering_results03_mf.Rds')
+saveRDS(fwm_results03_bp, file='data/fwm_clustering_results03_bp.Rds')
+
+# plot silhouette widths
+plot(fwm_results03_cc, measure = 'BHI', main = 'Biological Validation - CC', legendLoc = 'topleft')
+plot(fwm_results03_mf, measure = 'BHI', main = 'Biological Validation - MF', legendLoc = 'topleft')
+plot(fwm_results03_bp, measure = 'BHI', main = 'Biological Validation - BP', legendLoc = 'topright')
+
+# best scores
+optimalScores(fwm_results03_cc)
+optimalScores(fwm_results03_mf)
+optimalScores(fwm_results03_bp)
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 
