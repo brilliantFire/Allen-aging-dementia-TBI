@@ -318,214 +318,132 @@ exp03 <- function(data, genes, k_range, clust_algos, valid_metrics, metric, meth
                        metric = metric,
                        method = method,
                        annotation = fc_list,
-                       verbose = FALSE)
+                       verbose = TRUE)
     return(valid03)
 }
 
 '
 Clustering Experiments
 '
-linkages <- c('complete', 'average', 'ward')
-distances <- c('correlation', 'euclidean')
-algos <- c('hierarchical', 'clara', 'model')
-
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
-linkages <- c('average', 'ward')
-distances <- c('correlation', 'euclidean')
-algos <- c('hierarchical', 'clara', 'model')
-
-hip_results01 <- NULL
-hip_conditions01 <- NULL
-counter <- 1
+algos <- c('hierarchical', 'diana', 'clara', 'model')
 
 start_hip01 <- Sys.time()
 
-for(linkage in linkages){
-    for(distance in distances){
-        hip_conditions01[[counter]] <- list(distance = distance,
-                                            linkage = linkage)
-        exp <- exp01(hip_data, hip_genes, 4:20, algos, distance, linkage)
-        hip_results01[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
-        flush.console()
-    }
-}
-
-# save results and conditions to data folder
-saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
-saveRDS(hip_conditions01, file='data/hip_clustering_conditions01.Rds')
+hip_results01 <- exp01(hip_data, hip_genes, 2:20, algos, 'euclidean', 'ward')
 
 stop_hip01 <- Sys.time()
 duration_hip01 <- stop_hip01-start_hip01
-print(paste('Experiment duration:', round(duration_hip01,2))
+print(paste('Experiment duration:', round(duration_hip01, 2)))
+
+# save results and conditions to data folder
+saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
+
+# plot silhouette widths
+plot(hip_results01, measure = 'Silhouette', legendLoc = 'topright')
+
+# best scores
+optimalScores(hip_results01)
 
 ####################### Biological metrics #######################
-hip_results02 <- NULL
-hip_conditions02 <- NULL
-algos <- c('hierarchical', 'clara', 'model')
-linkages <- c('average', 'ward')
-
-counter <- 1
-
-annotations <- c('hip_fc_cc', 'hip_fc_mf', 'hip_fc_bp')
+algos <- c('clara', 'model')
 
 start_hip02 <- Sys.time()
 
-for(annotation in annotations){
-    for(linkage in linkages){
-        hip_conditions02[[counter]] <- list(annotation = annotation)
-        exp <- exp03(hip_data, hip_genes, 3:6, algos, 
-                     c('internal', 'biological'), 'euclidean', linkage, 
-                     eval(parse(text = annotation)))
-        hip_results02[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', linkage, 'linkage,', annotation, 'experiment.'))
-        flush.console()
-    }
-}
+hip_results02_cc <- exp03(hip_data, hip_genes, 3:10, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', hip_fc_cc)
 
-# save results and conditions to data folder
-saveRDS(hip_results02, file='data/hip_clustering_results02.Rds')
-saveRDS(hip_conditions02, file='data/hip_clustering_conditions02.Rds')
+hip_results02_mf <- exp03(hip_data, hip_genes, 3:10, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', hip_fc_mf)
+
+hip_results02_bp <- exp03(hip_data, hip_genes, 3:10, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', hip_fc_bp)
 
 stop_hip02 <- Sys.time()
 duration_hip02 <- stop_hip02-start_hip02
 print(paste('Experiment duration:', round(duration_hip02,2)))
 
+# save results and conditions to data folder
+saveRDS(hip_results02_cc, file='data/hip_clustering_results02_cc.Rds')
+saveRDS(hip_results02_mf, file='data/hip_clustering_results02_mf.Rds')
+saveRDS(hip_results02_bp, file='data/hip_clustering_results02_bp.Rds')
+
+# plot silhouette widths
+plot(hip_results02_cc, measure = 'BHI', main = 'Biological Validation - CC', legendLoc = 'topleft')
+plot(hip_results02_mf, measure = 'BHI', main = 'Biological Validation - MF', legendLoc = 'topleft')
+plot(hip_results02_bp, measure = 'BHI', main = 'Biological Validation - BP', legendLoc = 'topright')
+
+# best scores
+optimalScores(hip_results02_cc)
+optimalScores(hip_results02_mf)
+optimalScores(hip_results02_bp)
+
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
-linkages <- c('average', 'ward')
-distances <- c('correlation', 'euclidean')
-algos <- c('hierarchical', 'clara', 'model')
-
-fwm_results01 <- NULL
-fwm_conditions01 <- NULL
-counter <- 1
+algos <- c('hierarchical', 'diana', 'clara', 'model')
 
 start_fwm01 <- Sys.time()
 
-for(linkage in linkages){
-    for(distance in distances){
-        fwm_conditions01[[counter]] <- list(distance = distance,
-                                            linkage = linkage)
-        exp <- exp01(fwm_data, fwm_genes, 8:20, algos, distance, linkage)
-        fwm_results01[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
-        flush.console()
-    }
-}
-
-# save results and conditions to data folder
-saveRDS(fwm_results01, file='data/fwm_clustering_results01.Rds')
-saveRDS(fwm_conditions01, file='data/fwm_clustering_conditions01.Rds')
+fwm_results01 <- exp01(fwm_data, fwm_genes, 2:15, algos, 'euclidean', 'ward')
 
 stop_fwm01 <- Sys.time()
 duration_fwm01 <- stop_fwm01-start_fwm01
-print(paste('Experiment duration:', duration_fwm01))
+print(paste('Experiment duration:', round(duration_fwm01, 2)))
+
+# save results and conditions to data folder
+saveRDS(fwm_results01, file='data/fwm_clustering_results01.Rds')
+
+# plot silhouette widths
+plot(fwm_results01, measure = 'Silhouette', legendLoc = 'topright')
+
+# best scores
+optimalScores(fwm_results01)
 
 ####################### Biological metrics #######################
-fwm_results02 <- NULL
-fwm_conditions02 <- NULL
-algos <- c('hierarchical', 'clara')
-linkages <- c('ward')
-
-counter <- 1
-
-annotations <- c('fwm_fc_cc', 'fwm_fc_mf', 'fwm_fc_bp')
+algos <- c('diana', 'clara')
 
 start_fwm02 <- Sys.time()
 
-for(annotation in annotations){
-    for(linkage in linkages){
-        fwm_conditions02[[counter]] <- list(annotation = annotation)
-        exp <- exp03(fwm_data, fwm_genes, 6:8, algos, 
-                     c('internal', 'biological'), 'euclidean', linkage, 
-                     eval(parse(text = annotation)))
-        fwm_results02[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', linkage, 'linkage,', annotation, 'experiment.'))
-        flush.console()
-    }
-}
+fwm_results02_cc <- exp03(fwm_data, fwm_genes, 2:7, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', fwm_fc_cc)
 
-# save results and conditions to data folder
-saveRDS(fwm_results02, file='data/fwm_clustering_results02.Rds')
-saveRDS(fwm_conditions02, file='data/fwm_clustering_conditions02.Rds')
+fwm_results02_mf <- exp03(fwm_data, fwm_genes, 2:7, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', fwm_fc_mf)
+
+fwm_results02_bp <- exp03(fwm_data, fwm_genes, 2:7, algos, 
+                          c('internal', 'biological'), 
+                          'euclidean', 'ward', fwm_fc_bp)
 
 stop_fwm02 <- Sys.time()
 duration_fwm02 <- stop_fwm02-start_fwm02
 print(paste('Experiment duration:', round(duration_fwm02,2)))
 
+# save results and conditions to data folder
+saveRDS(fwm_results02_cc, file='data/fwm_clustering_results02_cc.Rds')
+saveRDS(fwm_results02_mf, file='data/fwm_clustering_results02_mf.Rds')
+saveRDS(fwm_results02_bp, file='data/fwm_clustering_results02_bp.Rds')
+
+# plot silhouette widths
+plot(fwm_results02_cc, measure = 'BHI', main = 'Biological Validation - CC', legendLoc = 'topleft')
+plot(fwm_results02_mf, measure = 'BHI', main = 'Biological Validation - MF', legendLoc = 'topleft')
+plot(fwm_results02_bp, measure = 'BHI', main = 'Biological Validation - BP', legendLoc = 'topright')
+
+# best scores
+optimalScores(fwm_results02_cc)
+optimalScores(fwm_results02_mf)
+optimalScores(fwm_results02_bp)
+
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
-####################### Internal metrics only #######################
-linkages <- c('average', 'ward')
-distances <- c('correlation', 'euclidean')
-algos <- c('hierarchical', 'clara', 'model')
-
-pcx_results01 <- NULL
-pcx_conditions01 <- NULL
-counter <- 1
-
-start_pcx01 <- Sys.time()
-
-for(linkage in linkages){
-    for(distance in distances){
-        pcx_conditions01[[counter]] <- list(distance = distance,
-                                            linkage = linkage)
-        exp <- exp01(pcx_data, pcx_genes, 6:16, algos, distance, linkage)
-        pcx_results01[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', distance, 'distance,', linkage, 'linkage,', 'experiment.'))
-        flush.console()
-    }
-}
-
-# save results and conditions to data folder
-saveRDS(pcx_results01, file='data/pcx_clustering_results01.Rds')
-saveRDS(pcx_conditions01, file='data/pcx_clustering_conditions01.Rds')
-
-stop_pcx01 <- Sys.time()
-duration_pcx01 <- stop_pcx01-start_pcx01
-print(paste('Experiment duration:', round(duration_pcx01,2))
-
-####################### Biological metrics #######################
-pcx_results02 <- NULL
-pcx_conditions02 <- NULL
-algos <- c('hierarchical', 'clara')
-linkages <- c('average', 'ward')
-
-counter <- 1
-
-annotations <- c('pcx_fc_cc', 'pcx_fc_mf', 'pcx_fc_bp')
-
-start_pcx02 <- Sys.time()
-
-for(annotation in annotations){
-    for(linkage in linkages){
-        pcx_conditions02[[counter]] <- list(annotation = annotation)
-        exp <- exp03(pcx_data, pcx_genes, 10:13, algos, 
-                     c('internal', 'biological'), 'euclidean', linkage, 
-                     eval(parse(text = annotation)))
-        pcx_results02[counter] <- list(optimalScores(exp))
-        counter <- counter + 1
-        print(paste('Finished', linkage, 'linkage,', annotation, 'experiment.'))
-        flush.console()
-    }
-}
-
-# save results and conditions to data folder
-saveRDS(pcx_results02, file='data/pcx_clustering_results02.Rds')
-saveRDS(pcx_conditions02, file='data/pcx_clustering_conditions02.Rds')
-
-stop_pcx02 <- Sys.time()
-duration_pcx02 <- stop_pcx02-start_pcx02
-print(paste('Experiment duration:', round(duration_pcx02,2)))
 
 
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
+
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 
 
 
