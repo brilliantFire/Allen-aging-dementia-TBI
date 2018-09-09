@@ -46,9 +46,6 @@ library(Biobase)        # For biological validation
 library(annotate)       # For biological validation
 library(GO.db)          # For biological validation
 library(mygene)         # To query mygene.info for functional annotation
-library(data.table)     # I/O
-library(dplyr)          # Entering the TIDYVERSE!
-library(gplots)         # heatmap.2
 
 '
 Load data
@@ -158,6 +155,8 @@ hip_fc <- data.frame(cbind(hip_cc, hip_mf, hip_bp))
 rownames(hip_fc) <- hip_entrez
 colnames(hip_fc) <- c('CC', 'MF', 'BP')
 
+saveRDS(hip_fc, file='data/hip_annotation_lists.Rds')
+
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
 fwm_cc <- NULL
 fwm_mf <- NULL
@@ -191,6 +190,8 @@ for(i in 1:length(fwm_genes)){
 fwm_fc <- data.frame(cbind(fwm_cc, fwm_mf, fwm_bp))
 rownames(fwm_fc) <- fwm_entrez
 colnames(fwm_fc) <- c('CC', 'MF', 'BP')
+
+saveRDS(fwm_fc, file='data/fwm_annotation_lists.Rds')
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
 pcx_cc <- NULL
@@ -226,6 +227,8 @@ pcx_fc <- data.frame(cbind(pcx_cc, pcx_mf, pcx_bp))
 rownames(pcx_fc) <- pcx_entrez
 colnames(pcx_fc) <- c('CC', 'MF', 'BP')
 
+saveRDS(pcx_fc, file='data/pcx_annotation_lists.Rds')
+
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~ ###
 tcx_cc <- NULL
 tcx_mf <- NULL
@@ -259,6 +262,8 @@ for(i in 1:length(tcx_genes)){
 tcx_fc <- data.frame(cbind(tcx_cc, tcx_mf, tcx_bp))
 rownames(tcx_fc) <- tcx_entrez
 colnames(tcx_fc) <- c('CC', 'MF', 'BP')
+
+saveRDS(tcx_fc, file='data/tcx_annotation_lists.Rds')
 
 # Specific gene ontology list generation
 # ~*~*~*~*~*~*~* Cellular Component (CC) *~*~*~*~*~*~*~* #
@@ -331,7 +336,7 @@ algos <- c('hierarchical', 'diana', 'clara', 'model')
 
 start_hip01 <- Sys.time()
 
-hip_results01 <- exp01(hip_data, hip_genes, 2:20, algos, 'euclidean', 'ward')
+hip_results01 <- exp01(hip_data, hip_genes, 2:25, algos, 'euclidean', 'ward')
 
 stop_hip01 <- Sys.time()
 duration_hip01 <- stop_hip01-start_hip01
@@ -341,55 +346,21 @@ print(paste('Experiment duration:', round(duration_hip01, 2)))
 saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
 
 # plot silhouette widths
-plot(hip_results01, measure = 'Silhouette', legendLoc = 'topright')
+plot(hip_results01, measure = 'Silhouette', 
+     main = 'Hippocampus - k = 2:25', 
+     legendLoc = 'topright')
 
 # best scores
 optimalScores(hip_results01)
 
-####################### Biological metrics #######################
-algos <- c('clara', 'model')
-
-start_hip02 <- Sys.time()
-
-hip_results02_cc <- exp03(hip_data, hip_genes, 3:10, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', hip_fc_cc)
-
-hip_results02_mf <- exp03(hip_data, hip_genes, 3:10, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', hip_fc_mf)
-
-hip_results02_bp <- exp03(hip_data, hip_genes, 3:10, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', hip_fc_bp)
-
-stop_hip02 <- Sys.time()
-duration_hip02 <- stop_hip02-start_hip02
-print(paste('Experiment duration:', round(duration_hip02,2)))
-
-# save results and conditions to data folder
-saveRDS(hip_results02_cc, file='data/hip_clustering_results02_cc.Rds')
-saveRDS(hip_results02_mf, file='data/hip_clustering_results02_mf.Rds')
-saveRDS(hip_results02_bp, file='data/hip_clustering_results02_bp.Rds')
-
-# plot silhouette widths
-plot(hip_results02_cc, measure = 'BHI', main = 'Biological Validation - CC', legendLoc = 'topleft')
-plot(hip_results02_mf, measure = 'BHI', main = 'Biological Validation - MF', legendLoc = 'topleft')
-plot(hip_results02_bp, measure = 'BHI', main = 'Biological Validation - BP', legendLoc = 'topright')
-
-# best scores
-optimalScores(hip_results02_cc)
-optimalScores(hip_results02_mf)
-optimalScores(hip_results02_bp)
-
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
-### EXPERIMENT #1: k = 2:15
-algos <- c('hierarchical', 'diana', 'clara', 'model')
+### k = 2:25
+algos <- c('hierarchical', 'clara', 'model')
 
 start_fwm01 <- Sys.time()
 
-fwm_results01 <- exp01(fwm_data, fwm_genes, 2:15, algos, 'euclidean', 'ward')
+fwm_results01 <- exp01(fwm_data, fwm_genes, 2:25, algos, 'euclidean', 'ward')
 
 stop_fwm01 <- Sys.time()
 duration_fwm01 <- stop_fwm01-start_fwm01
@@ -400,80 +371,59 @@ saveRDS(fwm_results01, file='data/fwm_clustering_results01.Rds')
 
 # plot silhouette widths
 plot(fwm_results01, measure = 'Silhouette', 
-     main = 'Internal Validation - k = 2:15', 
+     main = 'Forebrain White Matter - k = 2:25', 
      legendLoc = 'topright')
 
 # best scores
 optimalScores(fwm_results01)
 
-### EXPERIMENT #2: k = 15:25
-algos <- c('hierarchical', 'diana', 'clara', 'model')
+### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
+####################### Internal metrics only #######################
+### k = 2:25
+algos <- c('hierarchical', 'clara', 'model')
 
-start_fwm02 <- Sys.time()
+start_pcx01 <- Sys.time()
 
-fwm_results02 <- exp01(fwm_data, fwm_genes, 15:25, algos, 'euclidean', 'ward')
+pcx_results01 <- exp01(pcx_data, pcx_genes, 2:25, algos, 'euclidean', 'ward')
 
-stop_fwm02 <- Sys.time()
-duration_fwm02 <- stop_fwm02-start_fwm02
-print(paste('Experiment duration:', round(duration_fwm02, 2)))
+stop_pcx01 <- Sys.time()
+duration_pcx01 <- stop_pcx01-start_pcx01
+print(paste('Experiment duration:', round(duration_pcx01, 2)))
 
 # save results and conditions to data folder
-saveRDS(fwm_results02, file='data/fwm_clustering_results02.Rds')
+saveRDS(pcx_results01, file='data/pcx_clustering_results01.Rds')
 
 # plot silhouette widths
-plot(fwm_results02, measure = 'Silhouette', 
-     main = 'Internal Validation - k = 15:25',
+plot(pcx_results01, measure = 'Silhouette', 
+     main = 'Parietal Cortex - k = 2:25', 
      legendLoc = 'topright')
 
 # best scores
-optimalScores(fwm_results02)
-
-####################### Biological metrics #######################
-algos <- c('clara')
-
-start_fwm03 <- Sys.time()
-
-fwm_results03_cc <- exp03(fwm_data, fwm_genes, 2:10, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', fwm_fc_cc)
-
-saveRDS(fwm_results03_cc, file='data/fwm_clustering_results03_cc.Rds')
-plot(fwm_results03_cc, measure = 'BHI', main = 'Biological Validation - CC', legendLoc = 'topleft')
-optimalScores(fwm_results03_cc)
-
-stop_fwm03 <- Sys.time()
-duration_fwm03 <- stop_fwm03-start_fwm03
-print(paste('Experiment #1 duration:', round(duration_fwm03,2)))
-
-fwm_results03_mf <- exp03(fwm_data, fwm_genes, 2:4, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', fwm_fc_mf)
-
-saveRDS(fwm_results03_mf, file='data/fwm_clustering_results03_mf.Rds')
-plot(fwm_results03_mf, measure = 'BHI', main = 'Biological Validation - MF', legendLoc = 'topleft')
-optimalScores(fwm_results03_mf)
-
-stop_fwm03 <- Sys.time()
-duration_fwm03 <- stop_fwm03-start_fwm03
-print(paste('Experiment #2 duration:', round(duration_fwm03,2)))
-
-fwm_results03_bp <- exp03(fwm_data, fwm_genes, 2:4, algos, 
-                          c('internal', 'biological'), 
-                          'euclidean', 'ward', fwm_fc_bp)
-
-saveRDS(fwm_results03_bp, file='data/fwm_clustering_results03_bp.Rds')
-plot(fwm_results03_bp, measure = 'BHI', main = 'Biological Validation - BP', legendLoc = 'topright')
-optimalScores(fwm_results03_bp)
-
-stop_fwm03 <- Sys.time()
-duration_fwm03 <- stop_fwm03-start_fwm03
-print(paste('Experiment #3 duration:', round(duration_fwm03,2)))
-
-### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
-
-
+optimalScores(pcx_results01)
 
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
+####################### Internal metrics only #######################
+### k = 2:25
+algos <- c('hierarchical', 'clara', 'model')
+
+start_tcx01 <- Sys.time()
+
+tcx_results01 <- exp01(tcx_data, tcx_genes, 2:25, algos, 'euclidean', 'ward')
+
+stop_tcx01 <- Sys.time()
+duration_tcx01 <- stop_tcx01-start_tcx01
+print(paste('Experiment duration:', round(duration_tcx01, 2)))
+
+# save results and conditions to data folder
+saveRDS(tcx_results01, file='data/tcx_clustering_results01.Rds')
+
+# plot silhouette widths
+plot(tcx_results01, measure = 'Silhouette', 
+     main = 'Temporal Cortex - k = 2:25', 
+     legendLoc = 'topright')
+
+# best scores
+optimalScores(tcx_results01)
 
 
 
@@ -485,71 +435,3 @@ print(paste('Experiment #3 duration:', round(duration_fwm03,2)))
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-##########
-plot(test, measure = "Dunn", legendLoc = "topleft")
-
-hc <- clusters(test, "hierarchical")
-fc_labels <- factor(hip_fc$CC)
-plot(hc, labels = fc_labels)
-
-
-
-seven <- cutree(hc, 7)
-hip_clusters <- xtabs(~hip_fc$CC + seven)
-
-'
-Heatmaps
-'
-# To specify a different linkage type: heatmap.2(...,hclustfun = function(x) hclust(x,method = 'centroid'),...)
-# heatmap for TCx sig genes
-tcx_hm <- heatmap.2(fpkm_standard_mat[tcx_genes, sample(ncol(fpkm_standard_mat), 377)],
-                    hclustfun = function(x) hclust(x,method = 'ward.D2'),
-                    distfun = function(x) as.dist(1-cor(t(x))), # 1 minus the Pearson corr distance
-                    col=colorpanel(30, 
-                                   low = 'red', 
-                                   mid = 'white',
-                                   high = 'blue'),
-                    denscol='black',
-                    na.rm=TRUE,
-                    scale='none',
-                    trace = 'none', 
-                    dendrogram = 'both', 
-                    key = TRUE, 
-                    key.title = 'Key',
-                    cexRow = 0.4,
-                    cexCol = 0.4,
-                    margins = c(1.5,1.5),
-                    xlab='samples',
-                    ylab='genes',
-                    labRow=FALSE,
-                    labCol=FALSE)
