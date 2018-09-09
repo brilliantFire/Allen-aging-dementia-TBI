@@ -332,7 +332,7 @@ Clustering Experiments
 '
 ### ~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~* ###
 ####################### Internal metrics only #######################
-algos <- c('hierarchical', 'diana', 'clara', 'model')
+algos <- c('hierarchical', 'clara', 'model')
 
 start_hip01 <- Sys.time()
 
@@ -346,9 +346,11 @@ print(paste('Experiment duration:', round(duration_hip01, 2)))
 saveRDS(hip_results01, file='data/hip_clustering_results01.Rds')
 
 # plot silhouette widths
+png('data/hip_silhouette_plot.png')
 plot(hip_results01, measure = 'Silhouette', 
      main = 'Hippocampus - k = 2:25', 
      legendLoc = 'topright')
+dev.off()
 
 # best scores
 optimalScores(hip_results01)
@@ -370,9 +372,11 @@ print(paste('Experiment duration:', round(duration_fwm01, 2)))
 saveRDS(fwm_results01, file='data/fwm_clustering_results01.Rds')
 
 # plot silhouette widths
+png('data/fwm_silhouette_plot.png')
 plot(fwm_results01, measure = 'Silhouette', 
      main = 'Forebrain White Matter - k = 2:25', 
      legendLoc = 'topright')
+dev.off()
 
 # best scores
 optimalScores(fwm_results01)
@@ -394,9 +398,11 @@ print(paste('Experiment duration:', round(duration_pcx01, 2)))
 saveRDS(pcx_results01, file='data/pcx_clustering_results01.Rds')
 
 # plot silhouette widths
+png('data/pcx_silhouette_plot.png')
 plot(pcx_results01, measure = 'Silhouette', 
      main = 'Parietal Cortex - k = 2:25', 
      legendLoc = 'topright')
+dev.off()
 
 # best scores
 optimalScores(pcx_results01)
@@ -418,9 +424,11 @@ print(paste('Experiment duration:', round(duration_tcx01, 2)))
 saveRDS(tcx_results01, file='data/tcx_clustering_results01.Rds')
 
 # plot silhouette widths
+png('data/tcx_silhouette_plot.png')
 plot(tcx_results01, measure = 'Silhouette', 
      main = 'Temporal Cortex - k = 2:25', 
      legendLoc = 'topright')
+dev.off()
 
 # best scores
 optimalScores(tcx_results01)
