@@ -8,7 +8,13 @@ Rebecca Vislay Wade
 
 This script runs the final clustering strategies on DE gene expression levels
 for each brain region, labels each gene with its cluster assignment, and
-creates new variables based on the centroids of those clusters.
+creates new variables based on the medoids of those clusters. A final dataset
+is constructed consisting of:
+    1. Gene expression cluster medoids for 4 brain regions
+    2. Neuropathological & other molecular measurements by brain region
+    3. Demographic and medical history data for each donor
+
+The final table is saved to the data folder as an .Rds file
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
