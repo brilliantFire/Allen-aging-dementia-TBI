@@ -3,6 +3,8 @@
 Final Feature Engineering & Dataset Construction ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 07 Sep 2018 - Script created
+11 Sep 2018 - Final, unprepped dataset construction code written; saves table to 
+              data folder
 
 This script runs the final clustering strategies on DE gene expression levels
 for each brain region, labels each gene with its cluster assignment, and
@@ -17,14 +19,10 @@ R 3.4.1
 setwd('..')
 
 '
-Install packages & load libraries
+Load libraries
 '
-# install factoextra package for plots
-#install.packages('factoextra', repo='https://CRAN.R-project.org/')
-
 library(data.table)     # I/O
 library(cluster)
-library(factoextra)
 
 '
 Load data
@@ -33,7 +31,13 @@ Load data
 fpkm_table <- readRDS(file='data/normalized_fpkm_matrix.Rds')
 sample_info <- readRDS(file='data/sample_info.Rds')
 brain_reg_sig_genes <- readRDS(file='data/brain_reg_sig_genes.Rds')
+
+# gene names and annotation lists
 genes <- readRDS(file='data/genes.Rds')
+hip_anno <- readRDS(file='data/hip_annotation_lists.Rds')
+fwm_anno <- readRDS(file='data/fwm_annotation_lists.Rds')
+pcx_anno <- readRDS(file='data/pcx_annotation_lists.Rds')
+tcx_anno <- readRDS(file='data/tcx_annotation_lists.Rds')
 
 # pull out individual brain region DE gene lists
 hip_genes <- brain_reg_sig_genes$hip_genes
@@ -178,7 +182,8 @@ colnames(tcx_cluster_variables) <- sample_info$donor_id[which(sample_info$rnaseq
 tcx_cluster_variables <- t(tcx_cluster_variables)
 
 '
-Construct full dataset with new genetic features
+Add genetic cluster features to table with other neuropathological & molecular
+measurements
 '
 # Load Luminex protein, immunohistochemistry, and isoprostane quants
 neuropath_data <- data.frame(fread('http://aging.brain-map.org/api/v2/data/query.csv?criteria=model::ApiTbiDonorMetric,rma::options[num_rows$eqall]'))
@@ -213,7 +218,28 @@ rownames(data_plus_pcx) <- data_plus_pcx$Row.names
 data_plus_pcx$Row.names <- NULL
 
 # add TCx genetic variables
-final_dataset <- merge(data_plus_pcx, tcx_cluster_variables, by='row.names', all=TRUE)
+data_plus_tcx <- merge(data_plus_pcx, tcx_cluster_variables, by='row.names', all=TRUE)
+rownames(data_plus_tcx) <- data_plus_tcx$Row.names
+data_plus_tcx$Row.names <- NULL
+
+'
+Add demographic & medical history data
+'
+# grab donor information table from resource website
+donor_info <- data.frame(fread('http://aging.brain-map.org/api/v2/data/query.csv?criteria=model::ApiTbiDonorDetail,rma::options[num_rows$eqall]'))
+
+# set donor_id as row names
+rownames(donor_info) <- donor_info$donor_id
+donor_info$donor_id <- NULL
+
+# drop unneeded variables 'name' & 'control_set'
+cols_to_drop <- c('name', 'control_set')
+donor_info <- donor_info[ , !(names(donor_info) %in% cols_to_drop)]
+
+# create final dataset (hoorary!)
+final_dataset <- merge(data_plus_tcx, donor_info, by='row.names', all=TRUE)
 rownames(final_dataset) <- final_dataset$Row.names
 final_dataset$Row.names <- NULL
 
+# save as .Rds
+saveRDS(final_dataset, file='data/final_dataset_unprepped.Rds')
