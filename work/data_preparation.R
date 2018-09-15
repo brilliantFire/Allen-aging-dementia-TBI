@@ -17,4 +17,6 @@ setwd('..')
 '
 Load libraries
 '
-library(data.table)     # I/O
+install.packages(c('RGtk2'), repo='https://CRAN.R-project.org/')
+
+library(rattle)
