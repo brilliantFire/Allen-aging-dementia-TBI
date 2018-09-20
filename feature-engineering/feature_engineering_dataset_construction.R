@@ -7,6 +7,7 @@ Rebecca Vislay Wade
               data folder
 13 Sep 2018 - Added mygene queries for medoids/cluster members
 14 Sep 2018 - Annotation word clouds
+18 Sep 2018 - Added pretty clusplots & silhouette plots for thesis figures
 
 This script runs the final clustering strategies on DE gene expression levels
 for each brain region, labels each gene with its cluster assignment, and
@@ -83,13 +84,49 @@ plot(hip_final_clara, color=TRUE, shade=TRUE,
      labels=4, col.txt='black',
      col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
      cex=2, main = 'CLARA Clusters for Hippocampus DE Genes', 
-     sub='',
+     #sub='',
      ylim=c(-12,12),
      lwd=2,
      lty=3)
 
+# pretty clusplot
+png('data/hip_pretty_bivariate_plot.png', height=500, width=500)
+par(mar=c(rep(4.5,4)))
+clusplot(hip_final_clara, color=TRUE, shade=TRUE, 
+     labels=4, col.txt='black',
+     col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
+     cex=2, cex.axis=1.5, cex.lab=1.5, main = '', 
+     sub='',
+     ylim=c(-12,12),
+     lwd=2,
+     lty=3)
+dev.off()
+
+# pretty silhouette plot
+png('data/hip_pretty_silhouette_plot.png', height=500, width=500)
+plot(silhouette(hip_final_clara, full=FALSE),
+           col=c('seagreen3', 'steelblue3', 'violetred3'),
+           cex=3, cex.axis=1.5, cex.lab=1.5, main = '', 
+           sub='',
+           xlab='',
+           lwd=2,
+           lty=1, do.col.sort=TRUE, do.clus.stat=FALSE, do.n.k=FALSE)
+grid(col='darkgray', lty=2)
+dev.off()
+
 # extract medoids
 hip_cluster_variables <- hip_final_clara$medoids
+
+# query mygene.info for medoids
+hip_medoid_query <- queryMany(rownames(hip_cluster_variables), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+
+# get medoid GOs
+hip_medoid_bp_terms <- lapply(hip_medoid_query$go.BP, function(x) x$term)
+hip_medoid_cc_terms <- lapply(hip_medoid_query$go.CC, function(x) x$term)
+hip_medoid_mf_terms <- lapply(hip_medoid_query$go.MF, function(x) x$term)                             
+
+# get medoid gene info
+hip_medoid_gene_info <- genes[genes$gene_entrez_id %in% rownames(hip_cluster_variables), ]
 
 # change rownames
 rownames(hip_cluster_variables) <- c('gene_cluster01.HIP', 'gene_cluster02.HIP', 'gene_cluster03.HIP')
@@ -112,13 +149,49 @@ plot(fwm_final_clara, color=TRUE, shade=TRUE,
      labels=4, col.txt='black',
      col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
      cex=2, main = 'CLARA Clusters for Forebrain White Matter DE Genes', 
-     sub='',
+     #sub='',
      ylim=c(-12,12),
      lwd=2,
      lty=3)
 
+# pretty clusplot
+png('data/fwm_pretty_bivariate_plot.png', height=500, width=500)
+par(mar=c(rep(4.5,4)))
+clusplot(fwm_final_clara, color=TRUE, shade=TRUE, 
+     labels=4, col.txt='black',
+     col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
+     cex=2, cex.axis=1.5, cex.lab=1.5, main = '', 
+     sub='',
+     ylim=c(-12,12),
+     lwd=2,
+     lty=3)
+dev.off()
+
+# pretty silhouette plot
+png('data/fwm_pretty_silhouette_plot.png', height=500, width=500)
+plot(silhouette(fwm_final_clara, full=FALSE),
+           col=c('steelblue3', 'seagreen3'),
+           cex=3, cex.axis=1.5, cex.lab=1.5, main = '', 
+           sub='',
+           xlab='',
+           lwd=2,
+           lty=1, do.col.sort=TRUE, do.clus.stat=FALSE, do.n.k=FALSE)
+grid(col='darkgray', lty=2)
+dev.off()
+                              
 # extract medoids
 fwm_cluster_variables <- fwm_final_clara$medoids
+
+# query mygene.info for medoids
+fwm_medoid_query <- queryMany(rownames(fwm_cluster_variables), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+
+# get medoid GOs
+fwm_medoid_bp_terms <- lapply(fwm_medoid_query$go.BP, function(x) x$term)
+fwm_medoid_cc_terms <- lapply(fwm_medoid_query$go.CC, function(x) x$term)
+fwm_medoid_mf_terms <- lapply(fwm_medoid_query$go.MF, function(x) x$term)                             
+
+# get medoid gene info
+fwm_medoid_gene_info <- genes[genes$gene_entrez_id %in% rownames(fwm_cluster_variables), ]
 
 # change rownames
 rownames(fwm_cluster_variables) <- c('gene_cluster01.FWM', 'gene_cluster02.FWM')
@@ -133,7 +206,7 @@ fwm_cluster_variables <- t(fwm_cluster_variables)
 PCx Gene Expression Level Cluster Features
 '
 # run CLARA on PCx FPKM values
-pcx_final_clara <- clara(pcx_data, k=3, metric='euclidean', 
+pcx_final_clara <- clara(pcx_data, k=2, metric='euclidean', 
                          samples=1000, sampsize=250)
 
 # plots
@@ -141,13 +214,49 @@ plot(pcx_final_clara, color=TRUE, shade=TRUE,
      labels=4, col.txt='black',
      col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
      cex=2, main = 'CLARA Clusters for Parietal Cortex DE Genes', 
-     sub='',
+     #sub='',
      ylim=c(-12,12),
      lwd=2,
      lty=3)
 
+# pretty clusplot
+png('data/pcx_pretty_bivariate_plot.png', height=500, width=500)
+par(mar=c(rep(4.5,4)))
+clusplot(pcx_final_clara, color=TRUE, shade=TRUE, 
+     labels=4, col.txt='black',
+     col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3'),
+     cex=2, cex.axis=1.5, cex.lab=1.5, main = '', 
+     sub='',
+     ylim=c(-12,12),
+     lwd=2,
+     lty=3)
+dev.off()
+
+# pretty silhouette plot
+png('data/pcx_pretty_silhouette_plot.png', height=500, width=500)
+plot(silhouette(pcx_final_clara, full=FALSE),
+           col=c('steelblue3', 'violetred3', 'seagreen3'),
+           cex=3, cex.axis=1.5, cex.lab=1.5, main = '', 
+           sub='',
+           xlab='',
+           lwd=2,
+           lty=1, do.col.sort=TRUE, do.clus.stat=FALSE, do.n.k=FALSE)
+grid(col='darkgray', lty=2)
+dev.off()
+                              
 # extract medoids
 pcx_cluster_variables <- pcx_final_clara$medoids
+
+# query mygene.info for medoids
+pcx_medoid_query <- queryMany(rownames(pcx_cluster_variables), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+
+# get medoid GOs
+pcx_medoid_bp_terms <- lapply(pcx_medoid_query$go.BP, function(x) x$term)
+pcx_medoid_cc_terms <- lapply(pcx_medoid_query$go.CC, function(x) x$term)
+pcx_medoid_mf_terms <- lapply(pcx_medoid_query$go.MF, function(x) x$term)                             
+
+# get medoid gene info
+pcx_medoid_gene_info <- genes[genes$gene_entrez_id %in% rownames(pcx_cluster_variables), ]
 
 # change rownames
 rownames(pcx_cluster_variables) <- c('gene_cluster01.PCx', 'gene_cluster02.PCx', 'gene_cluster03.PCx')
@@ -170,14 +279,50 @@ plot(tcx_final_clara, color=TRUE, shade=TRUE,
      labels=4, col.txt='black',
      col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
      cex=2, main = 'CLARA Clusters for Temporal Cortex DE Genes', 
-     sub='',
+     #sub='',
      ylim=c(-12,12),
      lwd=2,
      lty=3)
 
+# pretty clusplot
+png('data/tcx_pretty_bivariate_plot.png', height=500, width=500)
+par(mar=c(rep(4.5,4)))
+clusplot(tcx_final_clara, color=TRUE, shade=TRUE, 
+     labels=4, col.txt='black',
+     col.p='black', col.clus=c('seagreen3', 'steelblue3', 'violetred3', 'sienna3'),
+     cex=2, cex.axis=1.5, cex.lab=1.5, main = '', 
+     sub='',
+     ylim=c(-12,12),
+     lwd=2,
+     lty=3)
+dev.off()                              
+
+# pretty silhouette plot
+png('data/tcx_pretty_silhouette_plot.png', height=500, width=500)
+plot(silhouette(tcx_final_clara, full=FALSE),
+           col=c('seagreen3', 'steelblue3'),
+           cex=3, cex.axis=1.5, cex.lab=1.5, main = '', 
+           sub='',
+           xlab='',
+           lwd=2,
+           lty=1, do.col.sort=TRUE, do.clus.stat=FALSE, do.n.k=FALSE)
+grid(col='darkgray', lty=2)
+dev.off()
+                              
 # extract medoids
 tcx_cluster_variables <- tcx_final_clara$medoids
 
+# query mygene.info for medoids
+tcx_medoid_query <- queryMany(rownames(tcx_cluster_variables), scopes='entrezgene', fields=c('go', 'symbol'), species='human')
+
+# get medoid GOs
+tcx_medoid_bp_terms <- lapply(tcx_medoid_query$go.BP, function(x) x$term)
+tcx_medoid_cc_terms <- lapply(tcx_medoid_query$go.CC, function(x) x$term)
+tcx_medoid_mf_terms <- lapply(tcx_medoid_query$go.MF, function(x) x$term)                             
+
+# get medoid gene info
+tcx_medoid_gene_info <- genes[genes$gene_entrez_id %in% rownames(tcx_cluster_variables), ]
+                              
 # change rownames
 rownames(tcx_cluster_variables) <- c('gene_cluster01.TCx', 'gene_cluster02.TCx')
 
@@ -412,3 +557,17 @@ wordcloud(names(tcx_terms02_table),as.numeric(tcx_terms02_table),
           scale=c(4, 2),min.freq=2,max.words=100, random.order=T, 
           rot.per=.10, colors=c('black', 'blue', 'red'), vfont=c('sans serif','bold'))
 dev.off()
+                                                            
+
+ 
+
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            
+                                                            

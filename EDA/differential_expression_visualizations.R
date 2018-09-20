@@ -9,6 +9,9 @@ Rebecca Vislay Wade
 09 Jul 2018 - Generalized for intersection gene lists with different numbers of
               genes; tested for FDR <= 0.02 genes
 13 Jul 2018 - Outputs
+19 Jul 2018 - Changed image output format to .tiff; added HIP vs other brain regions
+              and non-hippocampus regions only Venn diagrams
+21 Jul 2018 - Added xtable for pretty summary tables
 
 This script produces the following visualizations of differentially
 expressed genes identified in the differential_expression_dispersions_exact_tests.R 
@@ -45,6 +48,7 @@ library(VennDiagram)    # Venn diagrams with loads of graphical control
 library(gplots)         # heatmaps, extracting from Venn diagrams
 library(reshape2)       # split open and melt dataframes
 library(ggplot2)        # other graphics
+library(xtable)         # pretty LaTeX tables
 
 '
 Load dataframes produced by differential_expression_dispersions_exact_tests.R script...
@@ -109,14 +113,14 @@ length(female_genes)
 '
 Venn diagrams
 '
-# 'data/venn_brain_region_0.02_10000.png'
+# 'data/venn_brain_region_0.02_10000.tif'
 # use venn.diagram from the VennDiagram library
 brain_reg_venn <- venn.diagram(list(hip_genes=hip_genes,
                                     fwm_genes=fwm_genes,
                                     pcx_genes=pcx_genes,
                                     tcx_genes=tcx_genes) , 
                                filename = NULL,
-                               imagetype='png',
+                               imagetype='tiff',
                                fill=c('red', 'blue', 'green', 'purple'),
                                alpha=c(0.3,0.3,0.3,0.3), # transparency
                                cex = 0.9, 
@@ -141,7 +145,7 @@ venn_intersections <- attr(venn_contents, 'intersections')
 intersection_genes <- venn_intersections$`hip_genes:fwm_genes:pcx_genes:tcx_genes`
 
 # same now for donor sex groups
-# 'data/venn_donor_sex_0.02_10000.png'
+# 'data/venn_donor_sex_0.02_10000.tif'
 donor_sex_venn <- venn.diagram(list(male_genes=male_genes,
                                     female_genes=female_genes), 
                                filename = NULL,
@@ -153,7 +157,7 @@ donor_sex_venn <- venn.diagram(list(male_genes=male_genes,
                                cat.fontfamily='sans',
                                category.names=c('male', 'female'), 
                                main.fontfamily='sans',
-                               main='Dementia DEGs by Donor Sex')
+                               main='')
 grid.draw(donor_sex_venn)
 
 # get intersection genes
@@ -163,7 +167,7 @@ venn_sex_intersections <- attr(venn_sex_contents, 'intersections')
 intersection_genes_sex <- venn_sex_intersections$`male_genes:female_genes`
 
 # compare brain region intersection genes & donor sex intersection genes
-# 'data/venn_brain_region_sex_intersections_0.02_10000.png'
+# 'data/venn_brain_region_sex_intersections_0.02_10000.tif'
 donor_sex_region_venn <- venn.diagram(list(intersection_genes_sex=intersection_genes_sex, 
                                            intersection_genes=intersection_genes) , 
                                       filename = NULL,
@@ -175,8 +179,45 @@ donor_sex_region_venn <- venn.diagram(list(intersection_genes_sex=intersection_g
                                       cat.fontfamily='sans',
                                       category.names=c('donor sex', 'brain region'), 
                                       main.fontfamily='sans',
-                                      main='Dementia Intersection DEGs ~ Donor Sex & Brain Region')
+                                      main='')
 grid.draw(donor_sex_region_venn)
+
+# Venn for HIP versus all other brain regions
+# 'data/venn_brain_regions_hip_not_hip_0.02_10000.tif'
+not_hip_genes <- unique(c(fwm_genes, pcx_genes, tcx_genes))
+hip_not_hip_venn <- venn.diagram(list(hip_genes=hip_genes,
+                                      not_hip_genes=not_hip_genes), 
+                                      filename = NULL,
+                                      imagetype='tiff',
+                                      fill=c('red', 'blue'),
+                                      alpha=c(0.3,0.3), # transparency
+                                      cex = 1, 
+                                      fontfamily='sans',
+                                      cat.fontfamily='sans',
+                                      category.names=c('hippocampus', 'other regions'), 
+                                      cat.pos=c(-52,90),
+                                      cat.dist=c(0.025,-0.04),
+                                      cat.cex=c(0.9,0.9),
+                                      main.fontfamily='sans',
+                                      main='')
+grid.draw(hip_not_hip_venn)
+
+# Venn for just not HIP regions
+# 'data/venn_brain_regions_not_hip_0.02_10000.tif'
+not_hip_venn <- venn.diagram(list(fwm_genes=fwm_genes,
+                                  pcx_genes=pcx_genes,
+                                  tcx_genes=tcx_genes), 
+                                      filename = NULL,
+                                      imagetype='tiff',
+                                      fill=c('red', 'blue', 'green'),
+                                      alpha=c(0.3,0.3,0.3), # transparency
+                                      cex = 1, 
+                                      fontfamily='sans',
+                                      cat.fontfamily='sans',
+                                      category.names=c('forebrain WM', 'parietal ctx', 'temporal ctx'), 
+                                      main.fontfamily='sans',
+                                      main='Dementia Intersection DEGs ~ Non-hippocampus Regions')
+grid.draw(not_hip_venn)
 
 '
 FPKM Heatmaps
@@ -249,39 +290,204 @@ DEG_heatmap <- function(sample_list, gene_list, RNGseed, num_samples, ...){
     x_fpkm <- t(scale(t(x_fpkm)))
     # heatmap
     heatmap.2(x_fpkm,
+              hclustfun = function(x) hclust(x,method = 'complete'),
+              distfun = function(x) as.dist(1-cor(t(x))), # 1 minus the Pearson corr distance
               col=bluered(20),
               na.rm=TRUE, 
               trace = 'none', 
               dendrogram = 'both', 
               key = TRUE, 
-              key.title = 'Key',
-              cexRow = 0.7,
-              cexCol = 0.7,
-              margins = c(6,6),
-              xlab='samples',
-              ylab='genes')
+              key.title = '',
+              key.xlab = '',
+              key.ylab = '',
+              labRow=FALSE,
+              labCol=FALSE,
+              denscol = 'black',
+              cexRow = 0.8,
+              cexCol = 0.8,
+              margins = c(1,1),
+              xlab='',
+              ylab='')
 }
 
 # 600x600 pixel images w/ key
-png(filename='data/hip_heatmap_w_key.png', height = 600, width = 600)
-hip_heatmap <- DEG_heatmap(hip_samples, intersection_genes, 555, 25)
+tiff(filename='data/hip_heatmap_wo_key.tif', height = 600, width = 600)
+hip_heatmap <- DEG_heatmap(hip_samples, intersection_genes, 237, 25)
 dev.off()
 
-png(filename='data/fwm_heatmap_w_key.png', height = 600, width = 600)
+tiff(filename='data/fwm_heatmap_wo_key.tif', height = 600, width = 600)
 DEG_heatmap(fwm_samples, intersection_genes, 555, 25)
 dev.off()
 
-png(filename='data/pcx_heatmap_w_key.png', height = 600, width = 600)
+tiff(filename='data/pcx_heatmap_wo_key.tif', height = 600, width = 600)
 DEG_heatmap(pcx_samples, intersection_genes, 720, 25)
 dev.off()
 
-png(filename='data/tcx_heatmap_w_key.png', height = 600, width = 600)
+tiff(filename='data/tcx_heatmap_wo_key.tif', height = 600, width = 600)
 DEG_heatmap(tcx_samples, intersection_genes, 420, 25)
 dev.off()
 
-# 700x700 hippocampus image with key, bigger axes labels
-png(filename='data/hip_heatmap_w_key_BIG.png', height = 700, width = 700)
-hip_heatmap <- DEG_heatmap(hip_samples, intersection_genes, 555, 25)
+### 700x700 hippocampus image with key, bigger axes labels, annotation
+
+# subset FPKM values
+all_hip <- as.matrix(merged[hip_genes, colnames(merged) %in% hip_samples])
+class(all_hip) <- 'numeric'
+all_hip <- t(scale(t(all_hip)))
+
+hip_genes_all_samples <- as.matrix(merged[hip_genes, ])
+class(hip_genes_all_samples) <- 'numeric'
+hip_genes_all_samples <- t(scale(t(hip_genes_all_samples)))
+
+
+# get HIP sample dementia status
+hip_status <- sample_dementia_status[sample_dementia_status$rnaseq_profile_id %in% hip_samples, ]
+hip_dementia_status <- hip_status$act_demented
+
+status <- sample_dementia_status$act_demented
+status_colors_1 <- replace(status, status == 'No Dementia', 'darkmagenta')
+status_colors <- replace(status_colors_1, status_colors_1 == 'Dementia', 'darkgreen')
+
+# replace with colors for heatmap annotation
+hip_colors_1 <- replace(hip_dementia_status, hip_dementia_status == 'No Dementia', 'darkmagenta')
+hip_colors <- replace(hip_colors_1, hip_dementia_status == 'Dementia', 'darkgreen')
+
+# make a tiff
+tiff(filename='data/hip_heatmap_ALL_GENES.tif', height = 700, width = 700)
+heatmap.2(all_hip,
+          hclustfun = function(x) hclust(x,method = 'complete'),
+          distfun = function(x) as.dist(1-cor(t(x))), # 1 minus the Pearson corr distance
+          col=bluered(20),
+          #ColSideColors = hip_colors,
+          denscol='black',
+          na.rm=TRUE,
+          scale='none',
+          trace = 'none', 
+          dendrogram = 'both', 
+          key = TRUE, 
+          key.title = '',
+          key.xlab = '',
+          key.ylab = '',
+          cexRow = 2,
+          cexCol = 2,
+          margins = c(1.5,1.5),
+          xlab='',
+          ylab='',
+          labRow=FALSE,
+          labCol=FALSE)
+dev.off()
+
+### 700x700 FOREBRAIN WHITE MATTER image with key, bigger axes labels, annotation
+
+# subset FPKM values
+all_fwm <- as.matrix(merged[fwm_genes, colnames(merged) %in% fwm_samples])
+class(all_fwm) <- 'numeric'
+all_fwm <- t(scale(t(all_fwm)))
+
+# get fwm sample dementia status
+fwm_status <- sample_dementia_status[sample_dementia_status$rnaseq_profile_id %in% fwm_samples, ]
+fwm_dementia_status <- fwm_status$act_demented
+
+# replace with colors for heatmap annotation
+fwm_colors_1 <- replace(fwm_dementia_status, fwm_dementia_status == 'No Dementia', 'darkmagenta')
+fwm_colors <- replace(fwm_colors_1, fwm_dementia_status == 'Dementia', 'darkgreen')
+
+# make a tiff
+tiff(filename='data/fwm_heatmap_ALL_GENES.tif', height = 700, width = 700)
+heatmap.2(all_fwm,
+          hclustfun = function(x) hclust(x,method = 'complete'),
+          distfun = function(x) as.dist(1-cor(t(x))), # 1 minus the Pearson corr distance
+          col=bluered(20),
+          ColSideColors = fwm_colors,
+          denscol='black',
+          na.rm=TRUE,
+          scale='none',
+          trace = 'none', 
+          dendrogram = 'both', 
+          key = TRUE, 
+          key.title = 'Key',
+          cexRow = 0.4,
+          cexCol = 0.4,
+          margins = c(1.5,1.5),
+          xlab='samples',
+          ylab='genes',
+          labRow=FALSE,
+          labCol=FALSE)
+dev.off()
+
+### 700x700 PARIETAL CORTEX image with key, bigger axes labels, annotation
+
+# subset FPKM values
+all_pcx <- as.matrix(merged[pcx_genes, colnames(merged) %in% pcx_samples])
+class(all_pcx) <- 'numeric'
+all_pcx <- t(scale(t(all_pcx)))
+
+# get pcx sample dementia status
+pcx_status <- sample_dementia_status[sample_dementia_status$rnaseq_profile_id %in% pcx_samples, ]
+pcx_dementia_status <- pcx_status$act_demented
+
+# replace with colors for heatmap annotation
+pcx_colors_1 <- replace(pcx_dementia_status, pcx_dementia_status == 'No Dementia', 'darkmagenta')
+pcx_colors <- replace(pcx_colors_1, pcx_dementia_status == 'Dementia', 'darkgreen')
+
+# make a tiff
+tiff(filename='data/pcx_heatmap_ALL_GENES.tif', height = 700, width = 700)
+heatmap.2(all_pcx,
+          hclustfun = function(x) hclust(x,method = 'complete'),
+          distfun = function(x) as.dist(1-cor(t(x))), # 1 minus the Pearson corr distance
+          col=bluered(20),
+          ColSideColors = pcx_colors,
+          denscol='black',
+          na.rm=TRUE,
+          scale='none',
+          trace = 'none', 
+          dendrogram = 'both', 
+          key = TRUE, 
+          key.title = 'Key',
+          cexRow = 0.4,
+          cexCol = 0.4,
+          margins = c(1.5,1.5),
+          xlab='samples',
+          ylab='genes',
+          labRow=FALSE,
+          labCol=FALSE)
+dev.off()
+
+### 700x700 TEMPORAL CORTEX image with key, bigger axes labels, annotation
+
+# subset FPKM values
+all_tcx <- as.matrix(merged[tcx_genes, colnames(merged) %in% tcx_samples])
+class(all_tcx) <- 'numeric'
+all_tcx <- t(scale(t(all_tcx)))
+
+# get tcx sample dementia status
+tcx_status <- sample_dementia_status[sample_dementia_status$rnaseq_profile_id %in% tcx_samples, ]
+tcx_dementia_status <- tcx_status$act_demented
+
+# replace with colors for heatmap annotation
+tcx_colors_1 <- replace(tcx_dementia_status, tcx_dementia_status == 'No Dementia', 'darkmagenta')
+tcx_colors <- replace(tcx_colors_1, tcx_dementia_status == 'Dementia', 'darkgreen')
+
+# make a tiff
+tiff(filename='data/tcx_heatmap_ALL_GENES.tif', height = 700, width = 700)
+heatmap.2(all_tcx,
+          hclustfun = function(x) hclust(x,method = 'complete'),
+          distfun = function(x) as.dist(1-cor(t(x))), # 1 minus the Pearson corr distance
+          col=bluered(20),
+          ColSideColors = tcx_colors,
+          denscol='black',
+          na.rm=TRUE,
+          scale='none',
+          trace = 'none', 
+          dendrogram = 'both', 
+          key = TRUE, 
+          key.title = 'Key',
+          cexRow = 0.4,
+          cexCol = 0.4,
+          margins = c(1.5,1.5),
+          xlab='samples',
+          ylab='genes',
+          labRow=FALSE,
+          labCol=FALSE)
 dev.off()
 
 '
@@ -353,8 +559,14 @@ class_results <- replace(class_results, class_results == -1, 'Down')
 melted_class_results <- melt(class_results, id.vars='gene_name')
 
 # use ggplot2 to visualize the classification results
-png(filename='data/expression_classification_intersection_genes.png', height = 700, width = 700)
+tiff(filename='data/expression_classification_intersection_genes.tif', height = 700, width = 700)
 ggplot(data = melted_class_results, aes(x=variable, y=gene_name)) + 
+  theme(axis.text.x=element_text(size=12),
+        axis.title.x=element_text(size=14),
+        axis.text.y=element_text(size=12),
+        axis.title.y=element_text(size=14),
+        legend.text=element_text(size=12),
+        legend.title=element_text(size=12)) +
   geom_tile(aes(fill=value), color='lightgray', show.legend=TRUE) + 
   labs(x='brain region', y='gene', fill='expression') + 
   scale_fill_manual(values=c('blue', 'red'))
@@ -389,7 +601,107 @@ male_bcv_plot <- bcv_plot(male_norm)
 female_bcv_plot <- bcv_plot(female_norm)
 
 '
-Outputs
+Pretty summary tables
+'
+# donor info table
+cohort_stats <- data.frame(c('2008.4 +/- 3.8', '89.0 +/- 6.3', '4.6 +/- 1.5'),
+                       c('2008.7 +/- 3.4', '89.0 +/- 6.2', '4.7 +/- 2.0'))
+colnames(cohort_stats) <- c('TBI Group', 'Control Group')
+rownames(cohort_stats) <- c('Year of Death', 'Age (years)', 'Post-mortem Interval (hours)')
+
+table01 <- xtable(cohort_stats)
+print(table01)
+
+print.xtable(table01, type='latex', file='data/table01.tex')
+
+# number of samples for each donor
+num_samples <- data.frame(table(rowSums(table(sample_info$donor_id,sample_info$structure_acronym))))
+colnames(num_samples) <- c('Samples', 'Donors')
+
+table02 <- xtable(t(num_samples))
+align(table02) <- 'r|cccc'
+print(table02, include.colnames = FALSE, hline.after = c(1))
+
+print.xtable(table02, type='latex', file='data/table02.tex')
+
+# n Dementia & n No Dementia sample breakdown
+table(hip_norm$samples$group)
+table(fwm_norm$samples$group)
+table(pcx_norm$samples$group)
+table(tcx_norm$samples$group)
+
+table(male_norm$samples$group)
+table(female_norm$samples$group)
+
+
+all_groups_n <- data.frame(c(51, 48, 47, 51, 75, 122),
+                            c(43, 45, 44, 48, 80, 100))
+colnames(all_groups_n) = c('No Dementia', 'Dementia')
+rownames(all_groups_n) = c('HIP', 'FWM', 'PCx', 'TCx', 'Female', 'Male')
+
+all_groups_n['Total'] <- rowSums(all_groups_n)
+
+table03 <- xtable(all_groups_n)
+align(table03) <- 'l|cc|c'
+digits(table03) <- 0
+print(table03, hline.after = c(0,4))
+
+print.xtable(table03, type='latex', file='data/table03.tex')
+
+# Filtering & dispersions results
+n_genes <- c(dim(hip_norm)[1],
+             dim(fwm_norm)[1],
+             dim(pcx_norm)[1],
+             dim(tcx_norm)[1],
+             dim(female_norm)[1],
+             dim(male_norm)[1])
+
+common_disp <- c(round(estimateGLMCommonDisp(hip_norm)$common.dispersion, 4),
+                 round(estimateGLMCommonDisp(fwm_norm)$common.dispersion, 4),
+                 round(estimateGLMCommonDisp(pcx_norm)$common.dispersion, 4),
+                 round(estimateGLMCommonDisp(tcx_norm)$common.dispersion, 4),
+                 round(estimateGLMCommonDisp(female_norm)$common.dispersion, 4),
+                 round(estimateGLMCommonDisp(male_norm)$common.dispersion, 4))
+
+bcv <- round(sqrt(common_disp),4)
+
+n_sig_genes <- c(length(hip_genes),
+                 length(fwm_genes),
+                 length(pcx_genes),
+                 length(tcx_genes),
+                 length(female_genes),
+                 length(male_genes))
+
+all_stats <- data.frame(cbind(n_genes, common_disp, bcv, n_sig_genes))
+colnames(all_stats) = c('No. Genes After Filtering',
+                        '$\\hat{\\phi}_{common}$', 
+                        'BCV',
+                        'No. Significant Genes ($p_{adj} \\leq 0.02$)')
+rownames(all_stats) = c('HIP', 'FWM', 'PCx', 'TCx', 'Female', 'Male')
+
+table04 <- xtable(all_stats)
+align(table04) <- 'l|c|c|c|c'
+digits(table04) <- c(0,0,4,4,0)
+print(table04,
+      hline.after = c(0,4), 
+      sanitize.text.function = function(x) {x})
+
+print.xtable(table04, type='latex', file='data/table04.tex')
+
+# intersection gene info
+int_genes <- data.frame(read.csv('data/intersection_gene_info.csv'))
+colnames(int_genes) <- c('Entrez Gene ID', 'Symbol', 'Name', 'Regulation in Dementia', 'General Function')
+
+table05 <- xtable(int_genes)
+print(table05,
+      hline.after = c(0),
+      include.rownames = FALSE,
+      scalebox = 0.7)
+
+print.xtable(table05, type='latex', file='data/table05.tex')
+
+'
+Output files
 '
 # Normalized FPKM matrix w/ colnames = rnaseq_profile_id & rownames = gene_id (Entrez ID)
 saveRDS(merged, file='data/normalized_fpkm_matrix.Rds')
