@@ -7,7 +7,9 @@ Rebecca Vislay Wade
               data folder
 13 Sep 2018 - Added mygene queries for medoids/cluster members
 14 Sep 2018 - Annotation word clouds
-18 Sep 2018 - Added pretty clusplots & silhouette plots for thesis figures
+18 Sep 2018 - Added pretty bivariate & silhouette plots for thesis figures
+30 Sep 2018 - Added xtables for pretty LaTeX tables
+07 Oct 2018 - Added observation weights to final_dataset
 
 This script runs the final clustering strategies on DE gene expression levels
 for each brain region, labels each gene with its cluster assignment, and
@@ -34,6 +36,7 @@ library(data.table)     # I/O
 library(cluster)
 library(mygene)         # To query mygene.info for functional annotation
 library(wordcloud)      # Word clouds of annotation terms/words
+library(xtable)         # pretty LaTeX tables
 
 '
 Load data
@@ -206,7 +209,7 @@ fwm_cluster_variables <- t(fwm_cluster_variables)
 PCx Gene Expression Level Cluster Features
 '
 # run CLARA on PCx FPKM values
-pcx_final_clara <- clara(pcx_data, k=2, metric='euclidean', 
+pcx_final_clara <- clara(pcx_data, k=3, metric='euclidean', 
                          samples=1000, sampsize=250)
 
 # plots
@@ -338,15 +341,35 @@ measurements
 '
 # Load Luminex protein, immunohistochemistry, and isoprostane quants
 neuropath_data <- data.frame(fread('http://aging.brain-map.org/api/v2/data/query.csv?criteria=model::ApiTbiDonorMetric,rma::options[num_rows$eqall]'))
+                              
+#### Get local copy
+neuropath_data <- read.csv('data/ProteinAndPathologyQuantifications.csv')
+                              
+#### Get local copy
+obs_weights <- read.csv('data/group_weights.csv')
+colnames(obs_weights) <- c('donor_name', 'obs_weight')
 
-# drop donor_name and structure_id (not needed)
-cols_to_remove <- c('donor_name', 'structure_id')
-neuropath_data <- neuropath_data[ , !(names(neuropath_data) %in% cols_to_remove)]
+# merge neuropath_data & obs_weights on donor_name
+neuropath_data <- merge(neuropath_data, obs_weights, by='donor_name', all.x=TRUE)
+                              
+# drop structure_id (not needed)
+neuropath_data$structure_id <- NULL
 
 # reshape to wide format, donor_id down the side, variables by brain region across the top
 reshaped <- reshape(neuropath_data, direction = 'wide', 
                     idvar = 'donor_id', timevar = 'structure_acronym')
-
+                              
+# add mean of obs_weight across structures
+reshaped$obs_weight <- rowMeans(cbind(reshaped$obs_weight.HIP,
+                                      reshaped$obs_weight.FWM,
+                                      reshaped$obs_weight.PCx,
+                                      reshaped$obs_weight.TCx), na.rm=TRUE)
+                              
+# remove all but one donor_name variable & change name
+cols_to_remove <- c('donor_name.FWM', 'donor_name.PCx', 'donor_name.TCx', 'donor_name.HIP',
+                    'obs_weight.FWM', 'obs_weight.PCx', 'obs_weight.TCx', 'obs_weight.HIP')
+reshaped <- reshaped[ , !(names(reshaped) %in% cols_to_remove)]
+                              
 # set donor_id as row names
 rownames(reshaped) <- reshaped$donor_id
 reshaped$donor_id <- NULL
@@ -379,13 +402,16 @@ Add demographic & medical history data, save final dataset
 # grab donor information table from resource website
 donor_info <- data.frame(fread('http://aging.brain-map.org/api/v2/data/query.csv?criteria=model::ApiTbiDonorDetail,rma::options[num_rows$eqall]'))
 
+#### Get local copy
+donor_info <- read.csv('data/DonorInformation.csv')
+                              
 # set donor_id as row names
 rownames(donor_info) <- donor_info$donor_id
 donor_info$donor_id <- NULL
-
-# drop unneeded variables 'name' & 'control_set'
-cols_to_drop <- c('name', 'control_set')
-donor_info <- donor_info[ , !(names(donor_info) %in% cols_to_drop)]
+                              
+# drop unneeded variables 'control_set' and 'name'
+donor_info$control_set <- NULL
+donor_info$name <- NULL
 
 # create final dataset (hooray!)
 final_dataset <- merge(data_plus_tcx, donor_info, by='row.names', all=TRUE)
@@ -402,6 +428,9 @@ mygene.info Queries/Cluster Member Biological Process Wordclouds
 ### ~*~*~*~*~*~*~*~*~*~*~* HIP *~*~*~*~*~*~*~*~*~*~*~ ###
 # create cluster assignment dataframe
 hip_clusters <- data.frame(cluster_assignment=hip_final_clara$clustering)
+                              
+# medoid cluster assignments
+hip_medoid_assignments <- hip_final_clara$clustering[rownames(hip_clusters) %in% rownames(hip_final_clara$medoids)]
 
 # list of genes in each cluster
 hip_genes01 <- rownames(hip_clusters)[which(hip_clusters$cluster_assignment == 1)]
@@ -448,6 +477,9 @@ dev.off()
 ### ~*~*~*~*~*~*~*~*~*~*~* FWM *~*~*~*~*~*~*~*~*~*~*~ ###
 # create cluster assignment dataframe
 fwm_clusters <- data.frame(cluster_assignment=fwm_final_clara$clustering)
+                                                            
+# medoid cluster assignments
+fwm_medoid_assignments <- fwm_final_clara$clustering[rownames(fwm_clusters) %in% rownames(fwm_final_clara$medoids)]
 
 # list of genes in each cluster
 fwm_genes01 <- rownames(fwm_clusters)[which(fwm_clusters$cluster_assignment == 1)]
@@ -482,6 +514,9 @@ dev.off()
 ### ~*~*~*~*~*~*~*~*~*~*~* PCx *~*~*~*~*~*~*~*~*~*~*~ ###
 # create cluster assignment dataframe
 pcx_clusters <- data.frame(cluster_assignment=pcx_final_clara$clustering)
+                                                            
+# medoid cluster assignments
+pcx_medoid_assignments <- pcx_final_clara$clustering[rownames(pcx_clusters) %in% rownames(pcx_final_clara$medoids)]
 
 # list of genes in each cluster
 pcx_genes01 <- rownames(pcx_clusters)[which(pcx_clusters$cluster_assignment == 1)]
@@ -527,6 +562,9 @@ dev.off()
 ### ~*~*~*~*~*~*~*~*~*~*~* TCx *~*~*~*~*~*~*~*~*~*~*~ ###
 # create cluster assignment dataframe
 tcx_clusters <- data.frame(cluster_assignment=tcx_final_clara$clustering)
+                                                            
+# medoid cluster assignments
+tcx_medoid_assignments <- tcx_final_clara$clustering[rownames(tcx_clusters) %in% rownames(tcx_final_clara$medoids)]
 
 # list of genes in each cluster
 tcx_genes01 <- rownames(tcx_clusters)[which(tcx_clusters$cluster_assignment == 1)]
@@ -558,8 +596,54 @@ wordcloud(names(tcx_terms02_table),as.numeric(tcx_terms02_table),
           rot.per=.10, colors=c('black', 'blue', 'red'), vfont=c('sans serif','bold'))
 dev.off()
                                                             
+'
+Pretty LaTeX tables for thesis
+'
+# Originating clusters
+orig_clusters <- c('HIP 1', 'HIP 2', 'HIP 3',
+                   'FWM 1', 'FWM 2',
+                   'PCx 1', 'PCx 2', 'PCx 3',
+                   'TCx 1', 'TCx 2')
+                                                            
+# Entrez IDs
+entrez_IDs <- c(rownames(hip_final_clara$medoids),
+                rownames(fwm_final_clara$medoids),
+                rownames(pcx_final_clara$medoids),
+                rownames(tcx_final_clara$medoids))
+                                                            
+# get gene info
+gene_info <- genes[match(entrez_IDs, genes$gene_entrez_id),]
 
- 
+# new variable names
+new_vars <- c('gene_cluster01.HIP', 'gene_cluster02.HIP', 'gene_cluster03.HIP',
+              'gene_cluster01.FWM', 'gene_cluster02.FWM',
+              'gene_cluster01.PCx', 'gene_cluster02.PCx', 'gene_cluster03.PCx',
+              'gene_cluster01.TCx', 'gene_cluster02.TCx')
+
+# combine & clean u
+medoid_df <- data.frame(cbind(orig_clusters, gene_info, new_vars))
+medoid_df <- medoid_df[ , !names(medoid_df) %in% c('gene_id')]
+                                                            
+medoid_df <- medoid_df[ , c('orig_clusters',
+                            'gene_entrez_id',
+                            'gene_symbol',
+                            'gene_name',
+                            'chromosome',
+                            'new_vars')]
+rownames(medoid_df) <- NULL
+colnames(medoid_df) <- c('Originating Cluster',
+                         'Entrez Gene ID',
+                         'Symbol',
+                         'Name',
+                         'Chromosome Location',
+                         'New Variable Name')
+                                                            
+table06 <- xtable(medoid_df)
+align(table06) <- 'l|c|c|c|l|c|l'
+digits(table06) <- 0
+print(table06, hline.after = c(-1,0,3,5,8,10), include.rownames=FALSE)
+
+print.xtable(table06, type='latex', file='data/table06.tex')
 
                                                             
                                                             
