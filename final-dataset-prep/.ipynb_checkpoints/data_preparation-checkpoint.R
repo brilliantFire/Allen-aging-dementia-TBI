@@ -24,12 +24,21 @@ Load libraries
 '
 library(dplyr)        # select_if
 library(matrixStats)  # colMedians
+library(Amelia)       # missmap
 library(mice)         # predictive mean matching
 
 '
-Load data, drop variables
+Load data, missmap, & drop variables
 '
 data <- read.csv('data/final_dataset_unprepped_CSV.csv')
+
+# missmap for predictors
+drops_missmap <- c('X', 'obs_weight', 'act_demented')
+data_missmap <- data[ , !names(data) %in% drops_missmap]
+
+png('data/missmap_allvariables_v.2.png', height=500, width=800)
+missmap(data_missmap, col=c('gray80', 'royalblue4'), main='', x.cex=0.3, y.cex=1, margins=c(6.5,2.0))
+dev.off()
 
 # drop missing, zero, severely unbalanced, and duplicate variables
 drops <- c('isoprostane_pg_per_mg.HIP',

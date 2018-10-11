@@ -6,7 +6,9 @@ Rebecca Vislay Wade
 10 Oct 2018 - Final models & evaluation (confusion matrices & ROC curves)
 11 Oct 2018 - Finalized
 
-This script...
+This script performs variables selection using LASSO and constructs two logistic regression
+models with either all or a subset of the selected variables. Model evaluation with
+confusion matrices and ROC curves is included.
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
