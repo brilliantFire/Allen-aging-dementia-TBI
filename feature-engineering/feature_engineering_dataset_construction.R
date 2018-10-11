@@ -23,7 +23,7 @@ The final table is saved to the data folder as an .Rds file
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
-R 3.4.1
+R 3.5.1
 '
 ##
 

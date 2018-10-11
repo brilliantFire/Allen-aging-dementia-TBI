@@ -34,7 +34,7 @@ Additionally, it outputs the following to the `data` directory:
 
 See http://aging.brain-map.org/overview/home for more details about the data.
 
-R 3.4.1
+R 3.5.1
 '
 ##
 
