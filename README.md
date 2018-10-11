@@ -5,7 +5,7 @@ Inputs and outputs of scripts in `ETL`, `EDA` , `feature-engineering`, `final-da
 
 The `blog-notebooks` folder has some Jupyter notebooks I made in the process of blogging about this project. See [my Jekyll blog](http://blog.vislaywade.com/).  
 
-This project is being used to fulfill the requirements of the Master of Science in Predictive Analytics program from Northwestern University.  Thanks for checking it out!
+This project is being used to fulfill the requirements of the Master of Science in Predictive Analytics program (now [Master's in Data Science](https://sps.northwestern.edu/masters/data-science/)) from Northwestern University.  Thanks for checking it out!
 
 #### ../ETL
 * *`expected_count_TPM_FPKM_load.py/.R`* - Loads data from study website (R and Python versions)  
