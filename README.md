@@ -18,7 +18,7 @@ This project is being used to fulfill the requirements of the Master of Science 
 
 #### ../feature-engineering
 * *`clustering_experiments_gene_expression.R`* - Uses `clValid` to test different clustering methods and parameters on gene expression levels data
-* *`feature_engineering_dataset_construction`* - Runs k-medoids clustering via [CLARA](http://www.sthda.com/english/articles/27-partitioning-clustering-essentials/89-clara-clustering-large-applications/); adds medoids as features to tables of neuropathological, demographic, and medical history data for each patient/donor; accesses the [mygene.info](http://mygene.info/) database for gene ontologies and creates cloud visualizations of biological process terms for each cluster
+* *`feature_engineering_dataset_construction`* - Runs \\(k\\)-medoids clustering via [CLARA](http://www.sthda.com/english/articles/27-partitioning-clustering-essentials/89-clara-clustering-large-applications/); adds medoids as features to tables of neuropathological, demographic, and medical history data for each patient/donor; accesses the [mygene.info](http://mygene.info/) database for gene ontologies and creates cloud visualizations of biological process terms for each cluster
 
 #### ../final-dataset-prep  
 * *`data_preparation.R`* - Preparation of final dataset for modeling, including: dropping variables, converting categorical features to factor variables & reordering levels, and imputation of missing variables by CART (classification & regression trees) using the `mice` library; also includes location metric (mean & median) comparisons for all numeric variables
