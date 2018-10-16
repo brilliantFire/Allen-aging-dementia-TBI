@@ -167,3 +167,11 @@ plot(cv.fit.lasso2.misclass, xlab=expression(log(lambda)), ylab='misclassificati
 
 # lowest CV misclassification error coefs
 coef(cv.fit.lasso2.misclass, s='lambda.min')
+
+# non-cv glmnet call for coefficient paths
+lasso2.fit <- glmnet(train.x.2, train.y.2, weights=train.weights.2,
+                     family = 'binomial', lambda = rev(seq(0,1,0.001)), alpha = 1)
+
+# coefficient paths for lasso2, all variables
+plot(lasso2.fit, xvar='lambda', xlab=expression(log(lambda)),
+     ylim=c(-1000,1000))

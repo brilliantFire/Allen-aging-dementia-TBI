@@ -70,13 +70,13 @@ model1.yhat <- round(predict(model1.glm, newdata=test.1, type='response'), 4)
 
 # make test prediction labels
 model1.yhat.labels <- model1.yhat
-model1.yhat.labels[model1.yhat.labels > 0.5] = 1
-model1.yhat.labels[model1.yhat.labels <= 0.5] = 0
+model1.yhat.labels[model1.yhat.labels > 0.5000] = 1
+model1.yhat.labels[model1.yhat.labels <= 0.5000] = 0
 
 # make train prediction labels
 model1.glm.fitted.labels <- model1.glm$fitted
-model1.glm.fitted.labels[model1.glm.fitted.labels > 0.5] = 1
-model1.glm.fitted.labels[model1.glm.fitted.labels <= 0.5] = 0
+model1.glm.fitted.labels[model1.glm.fitted.labels > 0.5000] = 1
+model1.glm.fitted.labels[model1.glm.fitted.labels <= 0.5000] = 0
 
 # summary
 summary(model1.glm)
@@ -140,13 +140,13 @@ model2.yhat <- round(predict(model2.glm, newdata=test.2, type='response'), 4)
 
 # make test prediction labels
 model2.yhat.labels <- model2.yhat
-model2.yhat.labels[model2.yhat.labels > 0.5] = 1
-model2.yhat.labels[model2.yhat.labels <= 0.5] = 0
+model2.yhat.labels[model2.yhat.labels > 0.5000] = 1
+model2.yhat.labels[model2.yhat.labels <= 0.5000] = 0
 
 # make train prediction labels
 model2.glm.fitted.labels <- model2.glm$fitted
-model2.glm.fitted.labels[model2.glm.fitted.labels > 0.5] = 1
-model2.glm.fitted.labels[model2.glm.fitted.labels <= 0.5] = 0
+model2.glm.fitted.labels[model2.glm.fitted.labels > 0.5000] = 1
+model2.glm.fitted.labels[model2.glm.fitted.labels <= 0.5000] = 0
 
 # train confusion matrix
 confusionMatrix(as.factor(model2.glm.fitted.labels), as.factor(train.2$act_demented))
@@ -201,8 +201,8 @@ model3.yhat <- round(predict(model3.glm, newdata=test.3, type='response'), 4)
 
 # make test prediction labels
 model3.yhat.labels <- model3.yhat
-model3.yhat.labels[model3.yhat.labels > 0.5] = 1
-model3.yhat.labels[model3.yhat.labels <= 0.5] = 0
+model3.yhat.labels[model3.yhat.labels > 0.5000] = 1
+model3.yhat.labels[model3.yhat.labels <= 0.5000] = 0
 
 # make train prediction labels
 model3.glm.fitted.labels <- model3.glm$fitted
@@ -268,13 +268,13 @@ model4.yhat <- round(predict(model4.glm, newdata=test.4, type='response'), 4)
 
 # make test prediction labels
 model4.yhat.labels <- model4.yhat
-model4.yhat.labels[model4.yhat.labels > 0.5] = 1
-model4.yhat.labels[model4.yhat.labels <= 0.5] = 0
+model4.yhat.labels[model4.yhat.labels > 0.5000] = 1
+model4.yhat.labels[model4.yhat.labels <= 0.5000] = 0
 
 # make train prediction labels
 model4.glm.fitted.labels <- model4.glm$fitted
-model4.glm.fitted.labels[model4.glm.fitted.labels > 0.5] = 1
-model4.glm.fitted.labels[model4.glm.fitted.labels <= 0.5] = 0
+model4.glm.fitted.labels[model4.glm.fitted.labels > 0.5000] = 1
+model4.glm.fitted.labels[model4.glm.fitted.labels <= 0.5000] = 0
 
 # train confusion matrix
 confusionMatrix(as.factor(model4.glm.fitted.labels), as.factor(train.4$act_demented))
@@ -328,13 +328,13 @@ model5.yhat <- round(predict(model5.glm, newdata=test.5, type='response'), 4)
 
 # make test prediction labels
 model5.yhat.labels <- model5.yhat
-model5.yhat.labels[model5.yhat.labels > 0.5] = 1
-model5.yhat.labels[model5.yhat.labels <= 0.5] = 0
+model5.yhat.labels[model5.yhat.labels > 0.5000] = 1
+model5.yhat.labels[model5.yhat.labels <= 0.5000] = 0
 
 # make train prediction labels
 model5.glm.fitted.labels <- model5.glm$fitted
-model5.glm.fitted.labels[model5.glm.fitted.labels > 0.5] = 1
-model5.glm.fitted.labels[model5.glm.fitted.labels <= 0.5] = 0
+model5.glm.fitted.labels[model5.glm.fitted.labels > 0.5000] = 1
+model5.glm.fitted.labels[model5.glm.fitted.labels <= 0.5000] = 0
 
 # summary
 summary(model5.glm)

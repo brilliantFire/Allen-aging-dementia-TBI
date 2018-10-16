@@ -151,6 +151,9 @@ plot(cv.fit.lasso2.dev, xlab=expression(log(lambda)), ylab='deviance')
 # deviance versus lambda
 plot(cv.fit.lasso2.dev$lambda, cv.fit.lasso2.dev$cvm, xlab=expression(lambda), ylab='deviance')
 
+# print
+print(cv.fit.lasso2.dev)
+
 # lambda with the minimum cross-validation error
 lasso2.lambda.min <- cv.fit.lasso2.dev$lambda.min
 
@@ -165,5 +168,16 @@ cv.fit.lasso2.misclass <- cv.glmnet(train.x.2, train.y.2, weights=train.weights.
 # misclassification versus log(lambda)
 plot(cv.fit.lasso2.misclass, xlab=expression(log(lambda)), ylab='misclassification error')
 
+# print
+print(cv.fit.lasso2.misclass)
+
 # lowest CV misclassification error coefs
 coef(cv.fit.lasso2.misclass, s='lambda.min')
+
+# non-cv glmnet call for coefficient paths
+lasso2.fit <- glmnet(train.x.2, train.y.2, weights=train.weights.2,
+                     family = 'binomial', lambda = rev(seq(0,1,0.001)), alpha = 1)
+
+# coefficient paths for lasso2, all variables
+plot(lasso2.fit, xvar='lambda', xlab=expression(log(lambda)),
+     ylim=c(-1000,1000))
