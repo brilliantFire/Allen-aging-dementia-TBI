@@ -50,10 +50,10 @@ missmap(data_missmap, col=c('gray80', 'royalblue4'), main='', x.cex=0.3, y.cex=1
 dev.off()
 
 # drop missing, zero, severely unbalanced, and duplicate variables
-drops <- c('isoprostane_pg_per_mg.FWM',
+drops <- c('isoprostane_pg_per_mg.HIP',
            'isoprostane_pg_per_mg.FWM',
            'il_1b_pg_per_mg.FWM',
-           'il_1b_pg_per_mg.TCx',
+           'il_1b_pg_per_mg.PCx',
            'il_1b_pg_per_mg.TCx',
            'il_4_pg_per_mg.HIP',
            'ab42_over_ab40_ratio.HIP',
@@ -189,22 +189,26 @@ data_imp <- complete(data_mice)
 
 # selected plots with and without imputed values
 par(mfrow=c(2,2)) 
-# ptau_ng_per_mg.PCx
-plot(data$ptau_ng_per_mg.PCx, pch=22, col='royalblue4', bg='royalblue3', ylab='ptau_ng_per_mg.PCx')
-points(data_mice$imp$ptau_ng_per_mg.PCx, pch=24, col='maroon4', bg='maroon3')
-legend('topleft', c('observed', 'imputed'), pch=c(15,17), col=c('royalblue3', 'maroon3'))
-
-# isoprostane_ng_per_mg.TCx
-plot(data$isoprostane_pg_per_mg.TCx, pch=22, col='royalblue4', bg='royalblue3', ylab='isoprostane_ng_per_mg.TCx')
-points(data_mice$imp$isoprostane_pg_per_mg.TCx, pch=24, col='maroon4', bg='maroon3')
-
 # a_syn_pg_per_mg.HIP
-plot(data$a_syn_pg_per_mg.HIP, pch=22, col='royalblue4', bg='royalblue3', ylab='a_syn_pg_per_mg.HIP')
+plot(data$a_syn_pg_per_mg.HIP[1:dim(data_mice$imp$a_syn_pg_per_mg.HIP)[1]], 
+     pch=22, col='royalblue4', bg='royalblue3', ylab='a_syn_pg_per_mg.HIP')
 points(data_mice$imp$a_syn_pg_per_mg.HIP, pch=24, col='maroon4', bg='maroon3')
 
 # vegf_pg_per_mg.FWM
-plot(data$vegf_pg_per_mg.FWM, pch=22, col='royalblue4', bg='royalblue3', ylab='vegf_pg_per_mg.FWM')
+plot(data$vegf_pg_per_mg.FWM[1:dim(data_mice$imp$vegf_pg_per_mg.FWM)[1]], 
+     pch=22, col='royalblue4', bg='royalblue3', ylab='vegf_pg_per_mg.FWM')
 points(data_mice$imp$vegf_pg_per_mg.FWM, pch=24, col='maroon4', bg='maroon3')
+legend('topleft', c('observed', 'imputed'), pch=c(15,17), col=c('royalblue3', 'maroon3'))
+
+# ptau_ng_per_mg.PCx
+plot(data$ptau_ng_per_mg.PCx[1:dim(data_mice$imp$ptau_ng_per_mg.PCx)[1]], 
+     pch=22, col='royalblue4', bg='royalblue3', ylab='ptau_ng_per_mg.PCx')
+points(data_mice$imp$ptau_ng_per_mg.PCx, pch=24, col='maroon4', bg='maroon3')
+
+# isoprostane_ng_per_mg.TCx
+plot(data$isoprostane_pg_per_mg.TCx[1:dim(data_mice$imp$isoprostane_pg_per_mg.TCx)[1]], 
+     pch=22, col='royalblue4', bg='royalblue3', ylab='isoprostane_ng_per_mg.TCx')
+points(data_mice$imp$isoprostane_pg_per_mg.TCx, pch=24, col='maroon4', bg='maroon3')
 
 # add back weights & target
 data_imp$obs_weight <- obs_weight
@@ -422,12 +426,26 @@ tcx <- c('ihc_a_syn.TCx',
          'braak',
          'nia_reagan')
 
+# medoid gene variables
+genes <- c('gene_cluster01.HIP',
+           'gene_cluster02.HIP',
+           'gene_cluster03.HIP',
+           'gene_cluster01.FWM',
+           'gene_cluster02.FWM',
+           'gene_cluster01.PCx',
+           'gene_cluster02.PCx',
+           'gene_cluster03.PCx',
+           'gene_cluster01.TCx',
+           'gene_cluster02.TCx')
+
 all_vars <- data_drops[, unlist(lapply(data_drops, is.numeric))]
 
 hip_vars <- data_drops[ , names(data_drops) %in% hip]
 fwm_vars <- data_drops[ , names(data_drops) %in% fwm]
 pcx_vars <- data_drops[ , names(data_drops) %in% pcx]
 tcx_vars <- data_drops[ , names(data_drops) %in% tcx]
+
+gene_vars <- data_drops[ , names(data_drops) %in% genes]
 
 # HIP
 png('data/hip_pearson_correlogram.png', height=900, width=900)
@@ -457,4 +475,131 @@ dev.off()
 png('data/all_pearson_correlogram.png', height=1000, width=1000)
 corrplot(cor(all_vars, use='complete.obs'), tl.cex=0.7, tl.col='black', order='hclust',
          col=brewer.pal(n=10, name='PiYG'))
+dev.off()
+
+# medoid gene variables
+png('data/medoid_genes_pearson_correlogram.png', height=500, width=500)
+par(cex=1.3)
+corrplot(cor(gene_vars, use = 'complete.obs'), tl.cex=0.9, tl.col='black', order='hclust',
+             col=brewer.pal(n=10, name='PiYG'))
+dev.off()
+
+# specific cor calcs - HIP diagnosis & AD markers
+hip_diag_ad_vars <- c('ihc_a_syn.HIP',
+                      'ihc_at8_ffpe.HIP',
+                      'ihc_tau2_ffpe.HIP',
+                      'ihc_a_beta_ffpe.HIP',
+                      'ptau_ng_per_mg.HIP',
+                      'tau_ng_per_mg.HIP',
+                      'ab40_pg_per_mg.HIP',
+                      'a_syn_pg_per_mg.HIP',
+                      'ab42_pg_per_mg.HIP',
+                      'cerad',
+                      'braak',
+                      'nia_reagan')
+
+hip_diag_ad_cor <- cor(data_copy[ , names(data_copy) %in% hip_diag_ad_vars], use='complete.obs')
+
+# FWM diagnosis & AD markers
+fwm_diag_ad_vars <- c('ihc_a_syn.FWM',
+                      'ihc_at8_ffpe.FWM',
+                      'ihc_tau2_ffpe.FWM',
+                      'ihc_a_beta_ffpe.FWM',
+                      'ptau_ng_per_mg.FWM',
+                      'tau_ng_per_mg.FWM',
+                      'ab40_pg_per_mg.FWM',
+                      'a_syn_pg_per_mg.FWM',
+                      'ab42_pg_per_mg.FWM',
+                      'cerad',
+                      'braak',
+                      'nia_reagan')
+
+fwm_diag_ad_cor <- cor(data_copy[ , names(data_copy) %in% fwm_diag_ad_vars], use='complete.obs')
+
+# PCx diagnosis & AD markers
+pcx_diag_ad_vars <- c('ihc_a_syn.PCx',
+                      'ihc_at8_ffpe.PCx',
+                      'ihc_tau2_ffpe.PCx',
+                      'ihc_a_beta_ffpe.PCx',
+                      'ptau_ng_per_mg.TCx',
+                      'tau_ng_per_mg.PCx',
+                      'ab40_pg_per_mg.PCx',
+                      'a_syn_pg_per_mg.PCx',
+                      'ab42_pg_per_mg.PCx',
+                      'cerad',
+                      'braak',
+                      'nia_reagan')
+
+pcx_diag_ad_cor <- cor(data_copy[ , names(data_copy) %in% pcx_diag_ad_vars], use='complete.obs')
+
+# TCx diagnosis & AD markers
+tcx_diag_ad_vars <- c('ihc_a_syn.TCx',
+                      'ihc_at8_ffpe.TCx',
+                      'ihc_tau2_ffpe.TCx',
+                      'ihc_a_beta_ffpe.TCx',
+                      'ptau_ng_per_mg.TCx',
+                      'tau_ng_per_mg.TCx',
+                      'ab40_pg_per_mg.TCx',
+                      'a_syn_pg_per_mg.TCx',
+                      'ab42_pg_per_mg.TCx',
+                      'cerad',
+                      'braak',
+                      'nia_reagan')
+
+tcx_diag_ad_cor <- cor(data_copy[ , names(data_copy) %in% tcx_diag_ad_vars], use='complete.obs')
+
+# Education & diagnosis - HIP
+hip_diag_edu_vars <- c('ihc_at8_ffpe.HIP',
+                       'ihc_tau2_ffpe.HIP',
+                       'ab42_pg_per_mg.HIP',
+                       'cerad',
+                       'braak',
+                       'nia_reagan',
+                       'education_years')
+
+hip_diag_edu_cor <- cor(data_copy[ , names(data_copy) %in% hip_diag_edu_vars], use='complete.obs')
+
+# FWM
+fwm_diag_edu_vars <- c('ihc_at8_ffpe.FWM',
+                       'ihc_tau2_ffpe.FWM',
+                       'ab42_pg_per_mg.FWM',
+                       'cerad',
+                       'braak',
+                       'nia_reagan',
+                       'education_years')
+
+fwm_diag_edu_cor <- cor(data_copy[ , names(data_copy) %in% fwm_diag_edu_vars], use='complete.obs')
+
+# PCx
+pcx_diag_edu_vars <- c('ihc_at8_ffpe.PCx',
+                       'ihc_tau2_ffpe.PCx',
+                       'ab42_pg_per_mg.PCx',
+                       'cerad',
+                       'braak',
+                       'nia_reagan',
+                       'education_years')
+
+pcx_diag_edu_cor <- cor(data_copy[ , names(data_copy) %in% pcx_diag_edu_vars], use='complete.obs')
+
+# TCx
+tcx_diag_edu_vars <- c('ihc_at8_ffpe.TCx',
+                       'ihc_tau2_ffpe.TCx',
+                       'ab42_pg_per_mg.TCx',
+                       'cerad',
+                       'braak',
+                       'nia_reagan',
+                       'education_years')
+
+tcx_diag_edu_cor <- cor(data_copy[ , names(data_copy) %in% tcx_diag_edu_vars], use='complete.obs')
+
+# correlations among medoid genes for the 4 brain regions
+gene_cors <- cor(gene_vars, use = 'complete.obs')
+
+# missmap for predictors with dropped dataset
+drops_missmap <- c('obs_weight', 'act_demented')
+data_drops_missmap <- data_drops[ , !names(data) %in% drops_missmap]
+
+png('data/missmap_no_drops_v.1.png', height=500, width=800)
+missmap(data_drops_missmap, col=c('gray80', 'magenta4'), main='', 
+        x.cex=0.3, y.cex=1.5, margins=c(6.5,2.5))
 dev.off()
