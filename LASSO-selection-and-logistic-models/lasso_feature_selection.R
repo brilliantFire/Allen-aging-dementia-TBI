@@ -36,7 +36,7 @@ set.seed(617)
 
 # choose 27 random donors to hold out as test set (same 27 as above)
 test.2 <- data_imp[sample(nrow(data_imp), 27), ]
-train.2 <- data_imp[!rownames(data_imp) %in% rownames(test), ]
+train.2 <- data_imp[!rownames(data_imp) %in% rownames(test.2), ]
 
 # remove dsm_iv_clinical_diagnosis, nincds_arda_diagnosis, nia_reagan, braak, cerad
 diagnosis_vars <- c('dsm_iv_clinical_diagnosis',
@@ -79,14 +79,28 @@ plot(cv.fit.lasso2.dev, xlab=expression(log(lambda)), ylab='deviance',
      ylim=c(0,6))
 dev.off()
 
-# deviance versus lambda
-plot(cv.fit.lasso2.dev$lambda, cv.fit.lasso2.dev$cvm, xlab=expression(lambda), ylab='deviance')
+# deviance versus lambda (not log)
+png('data/lasso2_dev_v_lambda.png', height=400, width=900)
+par(mar=c(4.5,5.5,1.5,1.5))
+plot(cv.fit.lasso2.dev$lambda, cv.fit.lasso2.dev$cvm, xlab=expression(lambda), 
+     ylab='deviance', pch=20, col='magenta4', xlim=c(0,0.2),
+     ylim=range(c(cv.fit.lasso2.dev$cvm-cv.fit.lasso2.dev$cvsd, cv.fit.lasso2.dev$cvm+cv.fit.lasso2.dev$cvsd)),
+     cex.axis=2, cex.lab=2.5, cex=2)
+arrows(cv.fit.lasso2.dev$lambda, cv.fit.lasso2.dev$cvm-cv.fit.lasso2.dev$cvsd, 
+       cv.fit.lasso2.dev$lambda, cv.fit.lasso2.dev$cvm+cv.fit.lasso2.dev$cvsd, 
+       length=0.05, angle=90, code=3, col='gray50')
+abline(v=cv.fit.lasso2.dev$lambda.min, lty='dashed', lwd=3, col='darkorange2')
+text(0.063, 2, labels=expression(lambda[min] ~ '= 0.080'), cex=1.7)
+dev.off()
 
 # print
 print(cv.fit.lasso2.dev)
 
 # lambda with the minimum cross-validation error
-lasso2.lambda.min <- cv.fit.lasso2.dev$lambda.min
+lasso2.lambda.min.dev <- cv.fit.lasso2.dev$lambda.min
+
+# minimum deviance
+min.deviance <- cv.fit.lasso2.dev$cvm[which(cv.fit.lasso2.dev$lambda==lasso2.lambda.min.dev)]
 
 # coefficients of the model using minimum CV deviance lambda
 coef(cv.fit.lasso2.dev, s='lambda.min')
@@ -102,6 +116,27 @@ par(cex=1.7)
 plot(cv.fit.lasso2.misclass, xlab=expression(log(lambda)), ylab='misclassification error')
 dev.off()
 
+# deviance versus lambda (not log)
+png('data/lasso2_misclass_v_lambda.png', height=400, width=900)
+par(mar=c(4.5,5.5,1.5,1.5))
+plot(cv.fit.lasso2.misclass$lambda, cv.fit.lasso2.misclass$cvm, xlab=expression(lambda), 
+     ylab='misclassification error', pch=20, col='magenta4', xlim=c(0,0.2),
+     ylim=range(c(cv.fit.lasso2.misclass$cvm-cv.fit.lasso2.misclass$cvsd, 
+                  cv.fit.lasso2.misclass$cvm+cv.fit.lasso2.misclass$cvsd)),
+     cex.axis=2, cex.lab=2.3, cex=2)
+arrows(cv.fit.lasso2.misclass$lambda, cv.fit.lasso2.misclass$cvm-cv.fit.lasso2.misclass$cvsd, 
+       cv.fit.lasso2.misclass$lambda, cv.fit.lasso2.misclass$cvm+cv.fit.lasso2.misclass$cvsd, 
+       length=0.05, angle=90, code=3, col='gray50')
+abline(v=cv.fit.lasso2.misclass$lambda.min, lty='dashed', lwd=3, col='darkorange2')
+text(0.056, 0.4, labels=expression(lambda[min] ~ '= 0.040'), cex=1.7)
+dev.off()
+
+# lambda with the minimum cross-validation error
+lasso2.lambda.min.misclass <- cv.fit.lasso2.misclass$lambda.min
+
+# minimum deviance
+min.misclass <- cv.fit.lasso2.misclass$cvm[which(cv.fit.lasso2.misclass$lambda==lasso2.lambda.min.misclass)]
+
 # print
 print(cv.fit.lasso2.misclass)
 
@@ -113,5 +148,12 @@ lasso2.fit <- glmnet(train.x.2, train.y.2, weights=train.weights.2,
                      family = 'binomial', lambda = rev(seq(0,1,0.001)), alpha = 1)
 
 # coefficient paths for lasso2, all variables
+png('data/lasso2_coefficient_paths.png', height=400, width=900)
+par(mar=c(4.5,5.5,1.0,1.5))
 plot(lasso2.fit, xvar='lambda', xlab=expression(log(lambda)),
-     ylim=c(-1000,1000))
+     ylim=c(-500,500),cex.axis=1.7, cex.lab=2, cex=2, lwd=2)
+abline(v=log(cv.fit.lasso2.dev$lambda.min), lty='dashed', lwd=3, col='darkorange2')
+abline(v=log(cv.fit.lasso2.misclass$lambda.min), lty='dashed', lwd=3, col='forestgreen')
+text(-4.1, 400, labels=expression('misclassification' ~ lambda[min]), cex=1.7)
+text(-1.9, 400, labels=expression('deviance' ~ lambda[min]), cex=1.7)
+dev.off()
