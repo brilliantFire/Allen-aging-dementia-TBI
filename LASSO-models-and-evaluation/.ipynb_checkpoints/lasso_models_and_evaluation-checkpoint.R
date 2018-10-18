@@ -4,7 +4,7 @@ Lasso Feature Selection ~ Allen Aging, Dementia, & TBI Data
 Rebecca Vislay Wade
 05 Oct 2018 - Transfered notebook code to script
 10 Oct 2018 - Final models & evaluation (confusion matrices & ROC curves)
-16 Oct 2018 - Split off logistic models into separate script
+
 
 This script performs feature selection using Lasso.
 
@@ -20,6 +20,10 @@ setwd('..')
 Load libraries & dataset
 '
 library(glmnet)    # for LASSO
+library(caret)     # confusion matrices
+library(pROC)      # easy ROC curves
+library(car)       # VIFs
+library(xtable)    # pretty LaTeX tables
 
 data_imp <- read.csv('data/final_dataset_cart_imputed.csv')
 
@@ -57,20 +61,22 @@ test.2$obs_weight <- NULL
 
 # define model x & y for train & test sets
 train.y.2 <- as.numeric(train.2$act_demented)
+train.y.2[train.y.2 == 2] <- 0   # 'No Dementia' = 0
 train.x.2 <- model.matrix(~.-act_demented, data=train.2)
 train.x.2 <- train.x.2[ , -1]
 
 test.y.2 <- as.numeric(test.2$act_demented)
+test.y.2[test.y.2 == 2] <- 0   # 'No Dementia' = 0
 test.x.2 <- model.matrix(~.-act_demented, data=test.2)
 test.x.2 <- test.x.2[ , -1]
 
 '
-LASSO w/o Diagnosis Variables
+Model 1 - Minimum Deviance
 '
 # cross-validated lasso with deviance measure
 cv.fit.lasso2.dev <- cv.glmnet(train.x.2, train.y.2, weights=train.weights.2, 
-                           nfolds = 4, family = 'binomial', alpha=1,
-                           lambda = rev(seq(0,1,0.001)), type.measure = 'deviance')
+                               nfolds = 4, family = 'binomial', alpha=1,
+                               lambda = rev(seq(0,1,0.001)), type.measure = 'deviance')
 
 # deviance versus log(lambda)
 png('data/lasso2_dev_v_logLambda.png', height=500, width=1000)
@@ -103,8 +109,14 @@ lasso2.lambda.min.dev <- cv.fit.lasso2.dev$lambda.min
 min.deviance <- cv.fit.lasso2.dev$cvm[which(cv.fit.lasso2.dev$lambda==lasso2.lambda.min.dev)]
 
 # coefficients of the model using minimum CV deviance lambda
-coef(cv.fit.lasso2.dev, s='lambda.min')
+dev.min.coefs <- coef(cv.fit.lasso2.dev, s='lambda.min')
 
+# make predicitions using labmda.min
+lasso2.dev.yhat <- predict(cv.fit.lasso2.dev, newx=test.x.2, s='lambda.min')
+
+'
+Model 2 - Minimum Misclassification Error
+'
 # same CV model except with misclassification as measure
 cv.fit.lasso2.misclass <- cv.glmnet(train.x.2, train.y.2, weights=train.weights.2, 
                                     nfolds = 4, family = 'binomial', alpha=1,
@@ -141,7 +153,7 @@ min.misclass <- cv.fit.lasso2.misclass$cvm[which(cv.fit.lasso2.misclass$lambda==
 print(cv.fit.lasso2.misclass)
 
 # lowest CV misclassification error coefs
-coef(cv.fit.lasso2.misclass, s='lambda.min')
+misclass.min.coefs <- coef(cv.fit.lasso2.misclass, s='lambda.min')
 
 # non-cv glmnet call for coefficient paths
 lasso2.fit <- glmnet(train.x.2, train.y.2, weights=train.weights.2,
@@ -154,6 +166,38 @@ plot(lasso2.fit, xvar='lambda', xlab=expression(log(lambda)),
      ylim=c(-500,500),cex.axis=1.7, cex.lab=2, cex=2, lwd=2)
 abline(v=log(cv.fit.lasso2.dev$lambda.min), lty='dashed', lwd=3, col='darkorange2')
 abline(v=log(cv.fit.lasso2.misclass$lambda.min), lty='dashed', lwd=3, col='forestgreen')
-text(-4.1, 400, labels=expression('misclassification' ~ lambda[min]), cex=1.7)
-text(-1.9, 400, labels=expression('deviance' ~ lambda[min]), cex=1.7)
+text(-4.1, -400, labels=expression('misclassification' ~ lambda[min]), cex=1.7)
+text(-1.9, -400, labels=expression('deviance' ~ lambda[min]), cex=1.7)
 dev.off()
+
+'
+Predictions and Evaluation for the Two Models
+'
+# make predictions on models with lambda = 0.04 (misclass model) & lambda = 0.08 (deviance)
+lasso2.yhats <- predict(lasso2.fit, newx=test.x.2, s=c(0.04, 0.08), type='response')
+
+# predictions
+lasso2.dev.yhat <- lasso2.yhats[ , 2]
+lasso2.misclass.yhat <- lasso2.yhats[ , 1]
+
+# labels for predictions - deviance model
+lasso2.dev.yhat.labels <- lasso2.dev.yhat
+lasso2.dev.yhat.labels[lasso2.dev.yhat.labels > 0.5000] = 1
+lasso2.dev.yhat.labels[lasso2.dev.yhat.labels <= 0.5000] = 0
+
+# labels for predictions - misclass model
+lasso2.misclass.yhat.labels <- lasso2.misclass.yhat
+lasso2.misclass.yhat.labels[lasso2.misclass.yhat.labels > 0.5000] = 1
+lasso2.misclass.yhat.labels[lasso2.misclass.yhat.labels <= 0.5000] = 0
+
+# confusion matrices
+dev.test.conf.mat <- confusionMatrix(as.factor(lasso2.dev.yhat.labels), as.factor(test.y.2),
+                                   positive='1')
+
+misclass.test.conf.mat <- confusionMatrix(as.factor(lasso2.misclass.yhat.labels), as.factor(test.y.2),
+                                          positive='1')
+
+# roc
+lasso2.dev.roc.test <- roc(lasso2.dev.yhat.labels, lasso2.dev.yhat, plot=TRUE,  grid=TRUE, print.auc=TRUE,
+                       cex.axis=1.5, cex.lab=1.5, lwd=4, print.auc.cex=2, col='darkorchid3',
+                       print.auc.col='black', identity.lwd=2.5)
