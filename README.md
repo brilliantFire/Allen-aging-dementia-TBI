@@ -1,7 +1,7 @@
 # Allen-aging-dementia-TBI
 Repo for loading and analyzing the data from the Allen Institute of Brain Science's [Aging, Dementia, &amp; TBI Study](http://aging.brain-map.org/). The goal of the project is to develop features from gene expression levels for over 50,000 genes to be used along with neuropathological measurements, demographic information, and medical history data from 107 donors in models of dementia probability. Most scripts were written using [Anaconda](https://www.anaconda.com/) distributions of R 3.5.1 and [Jupyter Lab](http://jupyter.org/). There are a few Python versions that I've played with but the bulk of the project is in R.  
 
-Inputs and outputs of scripts in `ETL`, `EDA` , `feature-engineering`, `final-dataset-prep`, and `LASSO-selection-and-logistic-models` are stored in `data`. The `work` folder contains scripts in progress. 
+Inputs and outputs of scripts in `ETL`, `EDA` , `feature-engineering`, `final-dataset-prep`, and `lasso-models-and-evaluation` are stored in `data`. The `work` folder contains scripts in progress. 
 
 The `blog-notebooks` folder has some Jupyter notebooks I made in the process of blogging about this project. See [my Jekyll blog](http://blog.vislaywade.com/).  
 
@@ -23,7 +23,7 @@ This project is being used to fulfill the requirements of the Master of Science 
 #### ../final-dataset-prep  
 * *`data_preparation.R`* - Preparation of final dataset for modeling, including: dropping variables, converting categorical features to factor variables & reordering levels, and imputation of missing variables by CART (classification & regression trees) using the `mice` library; also includes location metric (mean & median) comparisons for all numeric variables
 
-#### ../LASSO-models-and-evaluation  
-* *`lasso_models_evaluation.R`* - [LASSO](https://en.wikipedia.org/wiki/Lasso_(statistics)) (Least Absolute Shrinkage and Selection Operator)-penalized logistice regression using the `glmnet` library; Model evaluation using confusion matrices and [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curves
+#### ../lasso-models-and-evaluation  
+* *`lasso_models_evaluation.R`* - [LASSO](https://en.wikipedia.org/wiki/Lasso_(statistics)) (Least Absolute Shrinkage and Selection Operator)-penalized logistic regression using the `glmnet` library; Model evaluation using confusion matrices and [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curves
 
 ##### This README last updated on: 2018-10-17
