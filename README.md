@@ -23,7 +23,7 @@ This project is being used to fulfill the requirements of the Master of Science 
 #### ../final-dataset-prep  
 * *`data_preparation.R`* - Preparation of final dataset for modeling, including: dropping variables, converting categorical features to factor variables & reordering levels, and imputation of missing variables by CART (classification & regression trees) using the `mice` library; also includes location metric (mean & median) comparisons for all numeric variables
 
-#### ../LASSO-selection-and-logistic-models  
-* *`lasso_selection_logistic_regression_model_evaluation`* - Variable selection by [LASSO](https://en.wikipedia.org/wiki/Lasso_(statistics)) (Least Absolute Shrinkage and Selection Operator) using the `glmnet` library; Includes construction of two logistic regression models using LASSO-selected variables; Model evaluation using confusion matrices and [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curves
+#### ../LASSO-models-and-evaluation  
+* *`lasso_models_evaluation.R`* - [LASSO](https://en.wikipedia.org/wiki/Lasso_(statistics)) (Least Absolute Shrinkage and Selection Operator)-penalized logistice regression using the `glmnet` library; Model evaluation using confusion matrices and [ROC](https://en.wikipedia.org/wiki/Receiver_operating_characteristic) curves
 
-##### This README last updated on: 2018-10-11
+##### This README last updated on: 2018-10-17
