@@ -7,6 +7,7 @@ Rebecca Vislay Wade
 11 Oct 2018 - Finalized script
 12 Oct 2018 - Added pretty plots for figures
 13 Oct 2018 - Correlograms
+19 Oct 2018 - Added final drops
 
 This script prepares the dataset constructed in `feature_engineering_dataset_construction.R`
 for modeling, including missing value imputation by classification & regression trees (CART)
@@ -53,7 +54,7 @@ dev.off()
 drops <- c('isoprostane_pg_per_mg.HIP',
            'isoprostane_pg_per_mg.FWM',
            'il_1b_pg_per_mg.FWM',
-           'il_1b_pg_per_mg.TCx',
+           'il_1b_pg_per_mg.PCx',
            'il_1b_pg_per_mg.TCx',
            'il_4_pg_per_mg.HIP',
            'ab42_over_ab40_ratio.HIP',
@@ -214,8 +215,35 @@ points(data_mice$imp$isoprostane_pg_per_mg.TCx, pch=24, col='maroon4', bg='maroo
 data_imp$obs_weight <- obs_weight
 data_imp$act_demented <- act_demented
 
-write.csv(data_imp, file='data/final_dataset_cart_imputed.csv')
-saveRDS(data_imp, file='data/final_dataset_cart_imputed.Rds')
+'
+Cap Extreme Values (>90% difference between mean and median) at 2 stdev
+'
+# ihc_a_syn.HIP
+data_imp$ihc_a_syn.HIP[data_imp$ihc_a_syn.HIP > (mean(data_imp$ihc_a_syn.HIP) + 2*sd(data_imp$ihc_a_syn.HIP))] <- mean(data_imp$ihc_a_syn.HIP) + 2*sd(data_imp$ihc_a_syn.HIP)
+
+# ab40_pg_per_mg.HIP
+data_imp$ab40_pg_per_mg.HIP[data_imp$ab40_pg_per_mg.HIP > (mean(data_imp$ab40_pg_per_mg.HIP) + 2*sd(data_imp$ab40_pg_per_mg.HIP))] <- mean(data_imp$ab40_pg_per_mg.HIP) + 2*sd(data_imp$ab40_pg_per_mg.HIP)
+
+# ifn_g_pg_per_mg.HIP
+data_imp$ifn_g_pg_per_mg.HIP[data_imp$ifn_g_pg_per_mg.HIP > (mean(data_imp$ifn_g_pg_per_mg.HIP) + 2*sd(data_imp$ifn_g_pg_per_mg.HIP))] <- mean(data_imp$ifn_g_pg_per_mg.HIP) + 2*sd(data_imp$ifn_g_pg_per_mg.HIP)
+
+# tnf_a_pg_per_mg.TCx
+data_imp$tnf_a_pg_per_mg.TCx[data_imp$tnf_a_pg_per_mg.TCx > (mean(data_imp$tnf_a_pg_per_mg.TCx) + 2*sd(data_imp$tnf_a_pg_per_mg.TCx))] <- mean(data_imp$tnf_a_pg_per_mg.TCx) + 2*sd(data_imp$tnf_a_pg_per_mg.TCx)
+
+# ab40_pg_per_mg.TCx
+data_imp$ab40_pg_per_mg.TCx[data_imp$ab40_pg_per_mg.TCx > (mean(data_imp$ab40_pg_per_mg.TCx) + 2*sd(data_imp$ab40_pg_per_mg.TCx))] <- mean(data_imp$ab40_pg_per_mg.TCx) + 2*sd(data_imp$ab40_pg_per_mg.TCx)
+
+# tnf_a_pg_per_mg.FWM
+data_imp$tnf_a_pg_per_mg.FWM[data_imp$tnf_a_pg_per_mg.FWM > (mean(data_imp$tnf_a_pg_per_mg.FWM) + 2*sd(data_imp$tnf_a_pg_per_mg.FWM))] <- mean(data_imp$tnf_a_pg_per_mg.FWM) + 2*sd(data_imp$tnf_a_pg_per_mg.FWM)
+
+# ab40_pg_per_mg.FWM
+data_imp$ab40_pg_per_mg.FWM[data_imp$ab40_pg_per_mg.FWM > (mean(data_imp$ab40_pg_per_mg.FWM) + 2*sd(data_imp$ab40_pg_per_mg.FWM))] <- mean(data_imp$ab40_pg_per_mg.FWM) + 2*sd(data_imp$ab40_pg_per_mg.FWM)
+
+# tnf_a_pg_per_mg.PCx
+data_imp$tnf_a_pg_per_mg.PCx[data_imp$tnf_a_pg_per_mg.PCx > (mean(data_imp$tnf_a_pg_per_mg.PCx) + 2*sd(data_imp$tnf_a_pg_per_mg.PCx))] <- mean(data_imp$tnf_a_pg_per_mg.PCx) + 2*sd(data_imp$tnf_a_pg_per_mg.PCx)
+
+# ab40_pg_per_mg.PCx
+data_imp$ab40_pg_per_mg.PCx[data_imp$ab40_pg_per_mg.PCx > (mean(data_imp$ab40_pg_per_mg.PCx) + 2*sd(data_imp$ab40_pg_per_mg.PCx))] <- mean(data_imp$ab40_pg_per_mg.PCx) + 2*sd(data_imp$ab40_pg_per_mg.PCx)
 
 '
 Pretty plots for figures
@@ -293,6 +321,10 @@ dev.off()
 '
 Correlograms
 '
+# convert act_demented to 0/1 indicator
+data_drops$act_demented <- as.numeric(data_drops$act_demented)
+data_drops$act_demented[data_drops$act_demented == 2] <- 0
+
 # subset by brain region
 hip <- c('ihc_a_syn.HIP',
          'ihc_at8_ffpe.HIP',
@@ -325,7 +357,8 @@ hip <- c('ihc_a_syn.HIP',
          'cerad',
          'num_tbi_w_loc',
          'braak',
-         'nia_reagan')
+         'nia_reagan',
+         'act_demented')
 
 fwm <- c('ihc_a_syn.FWM',
          'ihc_at8_ffpe.FWM',
@@ -357,7 +390,8 @@ fwm <- c('ihc_a_syn.FWM',
          'cerad',
          'num_tbi_w_loc',
          'braak',
-         'nia_reagan')
+         'nia_reagan',
+         'act_demented')
 
 pcx <- c('ihc_a_syn.PCx',
          'ihc_at8_ffpe.PCx',
@@ -391,7 +425,8 @@ pcx <- c('ihc_a_syn.PCx',
          'cerad',
          'num_tbi_w_loc',
          'braak',
-         'nia_reagan')
+         'nia_reagan',
+         'act_demented')
 
 tcx <- c('ihc_a_syn.TCx',
          'ihc_at8_ffpe.TCx',
@@ -424,7 +459,8 @@ tcx <- c('ihc_a_syn.TCx',
          'cerad',
          'num_tbi_w_loc',
          'braak',
-         'nia_reagan')
+         'nia_reagan',
+         'act_demented')
 
 # medoid gene variables
 genes <- c('gene_cluster01.HIP',
@@ -436,7 +472,8 @@ genes <- c('gene_cluster01.HIP',
            'gene_cluster02.PCx',
            'gene_cluster03.PCx',
            'gene_cluster01.TCx',
-           'gene_cluster02.TCx')
+           'gene_cluster02.TCx',
+           'act_demented')
 
 all_vars <- data_drops[, unlist(lapply(data_drops, is.numeric))]
 
@@ -449,25 +486,25 @@ gene_vars <- data_drops[ , names(data_drops) %in% genes]
 
 # HIP
 png('data/hip_pearson_correlogram.png', height=900, width=900)
-corrplot(cor(hip_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', order='hclust',
+corrplot(cor(hip_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', #order='hclust',
          col=brewer.pal(n=10, name='PiYG'))
 dev.off()
 
 # FWM
 png('data/fwm_pearson_correlogram.png', height=900, width=900)
-corrplot(cor(fwm_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', order='hclust',
+corrplot(cor(fwm_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', #order='hclust',
          col=brewer.pal(n=10, name='PiYG'))
 dev.off()
 
 # PCx
 png('data/pcx_pearson_correlogram.png', height=900, width=900)
-corrplot(cor(pcx_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', order='hclust',
+corrplot(cor(pcx_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', #order='hclust',
          col=brewer.pal(n=10, name='PiYG'))
 dev.off()
 
 # TCx
 png('data/tcx_pearson_correlogram.png', height=900, width=900)
-corrplot(cor(tcx_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', order='hclust',
+corrplot(cor(tcx_vars, use = 'complete.obs'), tl.cex=1.3, tl.col='black', #order='hclust',
          col=brewer.pal(n=10, name='PiYG'))
 dev.off()
 
@@ -603,3 +640,30 @@ png('data/missmap_no_drops_v.1.png', height=500, width=800)
 missmap(data_drops_missmap, col=c('gray80', 'magenta4'), main='', 
         x.cex=0.3, y.cex=1.5, margins=c(6.5,2.5))
 dev.off()
+
+'
+Final Drops - Diagnosis Variables, High Correlation Variables
+'
+final_drops <- c('dsm_iv_clinical_diagnosis',
+                 'nincds_arda_diagnosis',
+                 'cerad',
+                 'braak',
+                 'nia_reagan',
+                 'tau_ng_per_mg.TCx',
+                 'ihc_tau2_ffpe.TCx',
+                 'ihc_a_beta_ffpe.TCx',
+                 'rantes_pg_per_mg.TCx',
+                 'a_syn_pg_per_mg.TCx',
+                 'ihc_a_beta_ffpe.PCx',
+                 'il_6_pg_per_mg.PCx',
+                 'ptau_ng_per_mg.PCx',
+                 'ihc_at8_ffpe.FWM',
+                 'rantes_pg_per_mg.FWM',
+                 'il_6_pg_per_mg.FWM',
+                 'rantes_pg_per_mg.HIP',
+                 'ihc_at8_ffpe.HIP')
+
+data_imp_final <- data_imp[ , !names(data_imp) %in% final_drops]
+
+write.csv(data_imp_final, file='data/final_dataset_cart_imputed.csv')
+saveRDS(data_imp_final, file='data/final_dataset_cart_imputed.Rds')
