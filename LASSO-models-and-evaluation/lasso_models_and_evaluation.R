@@ -5,7 +5,7 @@ Rebecca Vislay Wade
 05 Oct 2018 - Transfered notebook code to script
 10 Oct 2018 - Final models & evaluation (confusion matrices & ROC curves)
 19 Oct 2018 - Documentation update
-
+20 Oct 2018 - added low cutoff confusion matrices
 
 This script uses cross-validation to determine optimal values of lambda
 (the regularization hyperparameter) that minimize either A) the binomial
@@ -91,20 +91,30 @@ deviance.min <- cv.fit.lasso1.dev$cvm[which(cv.fit.lasso1.dev$lambda==lasso1.lam
 lasso1.coefs <- coef(cv.fit.lasso1.dev, s='lambda.min')
 
 # obtain train fitted values
-lasso1.train.yhat <- predict(cv.fit.lasso1.dev, newx=train.x, weights=train.weights, 
+lasso1.train.yhat <- predict(cv.fit.lasso1.dev, newx=train.x, 
                              s='lambda.min', type='response')
 
 # class assignments for train set
-lasso1.train.yhat.labels <- predict(cv.fit.lasso1.dev, newx=train.x, weights=train.weights, 
+lasso1.train.yhat.labels <- predict(cv.fit.lasso1.dev, newx=train.x, 
                                     s='lambda.min', type='class')
 
 # make predictions on test using labmda.min
-lasso1.test.yhat <- predict(cv.fit.lasso1.dev, newx=test.x, weights=test.weights, 
+lasso1.test.yhat <- predict(cv.fit.lasso1.dev, newx=test.x, 
                             s='lambda.min', type='response')
 
-# predict class assignments
-lasso1.test.yhat.labels <- predict(cv.fit.lasso1.dev, newx=test.x, weights=test.weights, 
+# predict class assignments at p=0.5
+lasso1.test.yhat.labels <- predict(cv.fit.lasso1.dev, newx=test.x, 
                                    s='lambda.min', type='class')
+
+# lower cutoff class assignments for train
+lasso1.train.yhat.labels.lowCutoff <- lasso1.train.yhat
+lasso1.train.yhat.labels.lowCutoff[lasso1.train.yhat.labels.lowCutoff > 0.25] <- 1
+lasso1.train.yhat.labels.lowCutoff[lasso1.train.yhat.labels.lowCutoff <= 0.25] <- 0
+
+# lower cutoff class assignments for test
+lasso1.test.yhat.labels.lowCutoff <- lasso1.test.yhat
+lasso1.test.yhat.labels.lowCutoff[lasso1.test.yhat.labels.lowCutoff > 0.25] <- 1
+lasso1.test.yhat.labels.lowCutoff[lasso1.test.yhat.labels.lowCutoff <= 0.25] <- 0
 
 # confusion matrix for train
 lasso1.train.conf.mat <- confusionMatrix(as.factor(lasso1.train.yhat.labels), as.factor(train.y),
@@ -112,6 +122,14 @@ lasso1.train.conf.mat <- confusionMatrix(as.factor(lasso1.train.yhat.labels), as
 
 # confusion matrix for test
 lasso1.test.conf.mat <- confusionMatrix(as.factor(lasso1.test.yhat.labels), as.factor(test.y),
+                                        positive='1')
+
+# lower cutoff confusion matrix for train
+lasso1.train.conf.mat.lowcut <- confusionMatrix(as.factor(lasso1.train.yhat.labels.lowCutoff), as.factor(train.y),
+                                                positive='1')
+
+# lower cutoff confusion matrix for test
+lasso1.test.conf.mat.lowcut <- confusionMatrix(as.factor(lasso1.test.yhat.labels.lowCutoff), as.factor(test.y),
                                         positive='1')
 
 ##### train ROC curve #####
@@ -161,20 +179,30 @@ misclass.min <- cv.fit.lasso2.misclass$cvm[which(cv.fit.lasso2.misclass$lambda==
 lasso2.coefs <- coef(cv.fit.lasso2.misclass, s='lambda.min')
 
 # obtain train fitted values
-lasso2.train.yhat <- predict(cv.fit.lasso2.misclass, newx=train.x, weights=train.weights, 
+lasso2.train.yhat <- predict(cv.fit.lasso2.misclass, newx=train.x, 
                              s='lambda.min', type='response')
 
 # class assignments for train set
-lasso2.train.yhat.labels <- predict(cv.fit.lasso2.misclass, newx=train.x, weights=train.weights, 
+lasso2.train.yhat.labels <- predict(cv.fit.lasso2.misclass, newx=train.x,  
                                     s='lambda.min', type='class')
 
 # make predictions on test using labmda.min
-lasso2.test.yhat <- predict(cv.fit.lasso2.misclass, newx=test.x, weights=test.weights, 
+lasso2.test.yhat <- predict(cv.fit.lasso2.misclass, newx=test.x,  
                             s='lambda.min', type='response')
 
 # predict class assignments
-lasso2.test.yhat.labels <- predict(cv.fit.lasso2.misclass, newx=test.x, weights=test.weights, 
+lasso2.test.yhat.labels <- predict(cv.fit.lasso2.misclass, newx=test.x,  
                                    s='lambda.min', type='class')
+
+# lower cutoff predictions on train set
+lasso2.train.yhat.labels.lowCutoff <- lasso2.train.yhat
+lasso2.train.yhat.labels.lowCutoff[lasso2.train.yhat.labels.lowCutoff > 0.25] <- 1
+lasso2.train.yhat.labels.lowCutoff[lasso2.train.yhat.labels.lowCutoff <= 0.25] <- 0
+
+# lower cutoff predictions on test set
+lasso2.test.yhat.labels.lowCutoff <- lasso2.test.yhat
+lasso2.test.yhat.labels.lowCutoff[lasso2.test.yhat.labels.lowCutoff > 0.25] <- 1
+lasso2.test.yhat.labels.lowCutoff[lasso2.test.yhat.labels.lowCutoff <= 0.25] <- 0
 
 # confusion matrix for train
 lasso2.train.conf.mat <- confusionMatrix(as.factor(lasso2.train.yhat.labels), as.factor(train.y),
@@ -183,6 +211,14 @@ lasso2.train.conf.mat <- confusionMatrix(as.factor(lasso2.train.yhat.labels), as
 # confusion matrix for test
 lasso2.test.conf.mat <- confusionMatrix(as.factor(lasso2.test.yhat.labels), as.factor(test.y),
                                         positive='1')
+
+# confusion matrix for low cutoff train
+lasso2.train.conf.mat.lowcut <- confusionMatrix(as.factor(lasso2.train.yhat.labels.lowCutoff), as.factor(train.y),
+                                                positive='1')
+
+# confusion matrix for low cutoff test
+lasso2.test.conf.mat.lowcut <- confusionMatrix(as.factor(lasso2.test.yhat.labels.lowCutoff), as.factor(test.y),
+                                               positive='1')
 
 ##### train ROC curve #####
 # make a copy of train set
@@ -231,20 +267,30 @@ deviance.1se <- cv.fit.lasso3.dev$cvm[which(cv.fit.lasso3.dev$lambda==lasso3.lam
 lasso3.coefs <- coef(cv.fit.lasso3.dev, s='lambda.1se')
 
 # obtain train fitted values
-lasso3.train.yhat <- predict(cv.fit.lasso3.dev, newx=train.x, weights=train.weights, 
+lasso3.train.yhat <- predict(cv.fit.lasso3.dev, newx=train.x,  
                              s='lambda.1se', type='response')
 
 # class assignments for train set
-lasso3.train.yhat.labels <- predict(cv.fit.lasso3.dev, newx=train.x, weights=train.weights, 
+lasso3.train.yhat.labels <- predict(cv.fit.lasso3.dev, newx=train.x,
                                     s='lambda.1se', type='class')
 
 # make predictions on test using labmda.1se
-lasso3.test.yhat <- predict(cv.fit.lasso3.dev, newx=test.x, weights=test.weights, 
+lasso3.test.yhat <- predict(cv.fit.lasso3.dev, newx=test.x, 
                             s='lambda.1se', type='response')
 
 # predict class assignments
-lasso3.test.yhat.labels <- predict(cv.fit.lasso3.dev, newx=test.x, weights=test.weights, 
+lasso3.test.yhat.labels <- predict(cv.fit.lasso3.dev, newx=test.x,
                                    s='lambda.1se', type='class')
+
+# lower cutoff labels for train
+lasso3.train.yhat.labels.lowCutoff <- lasso3.train.yhat
+lasso3.train.yhat.labels.lowCutoff[lasso3.train.yhat.labels.lowCutoff > 0.27] <- 1
+lasso3.train.yhat.labels.lowCutoff[lasso3.train.yhat.labels.lowCutoff <= 0.27] <- 0
+
+# lower cutoff labels for test
+lasso3.test.yhat.labels.lowCutoff <- lasso3.test.yhat
+lasso3.test.yhat.labels.lowCutoff[lasso3.test.yhat.labels.lowCutoff > 0.27] <- 1
+lasso3.test.yhat.labels.lowCutoff[lasso3.test.yhat.labels.lowCutoff <= 0.27] <- 0
 
 # confusion matrix for train
 lasso3.train.conf.mat <- confusionMatrix(as.factor(lasso3.train.yhat.labels), as.factor(train.y),
@@ -253,6 +299,14 @@ lasso3.train.conf.mat <- confusionMatrix(as.factor(lasso3.train.yhat.labels), as
 # confusion matrix for test
 lasso3.test.conf.mat <- confusionMatrix(as.factor(lasso3.test.yhat.labels), as.factor(test.y),
                                         positive='1')
+
+# confusion matrix for train, low cutoff
+lasso3.train.conf.mat.lowcut <- confusionMatrix(as.factor(lasso3.train.yhat.labels.lowCutoff), as.factor(train.y),
+                                                positive='1')
+
+# confusion matrix for test, low cutoff
+lasso3.test.conf.mat.lowcut <- confusionMatrix(as.factor(lasso3.test.yhat.labels.lowCutoff), as.factor(test.y),
+                                                  positive='1')
 
 ##### train ROC curve #####
 # make a copy of train set
@@ -301,20 +355,30 @@ misclass.1se <- cv.fit.lasso4.misclass$cvm[which(cv.fit.lasso4.misclass$lambda==
 lasso4.coefs <- coef(cv.fit.lasso4.misclass, s='lambda.1se')
 
 # obtain train fitted values
-lasso4.train.yhat <- predict(cv.fit.lasso4.misclass, newx=train.x, weights=train.weights, 
+lasso4.train.yhat <- predict(cv.fit.lasso4.misclass, newx=train.x, 
                              s='lambda.1se', type='response')
 
 # class assignments for train set
-lasso4.train.yhat.labels <- predict(cv.fit.lasso4.misclass, newx=train.x, weights=train.weights, 
+lasso4.train.yhat.labels <- predict(cv.fit.lasso4.misclass, newx=train.x, 
                                     s='lambda.1se', type='class')
 
 # make predictions on test using labmda.1se
-lasso4.test.yhat <- predict(cv.fit.lasso4.misclass, newx=test.x, weights=test.weights, 
+lasso4.test.yhat <- predict(cv.fit.lasso4.misclass, newx=test.x, 
                             s='lambda.1se', type='response')
 
 # predict class assignments
-lasso4.test.yhat.labels <- predict(cv.fit.lasso4.misclass, newx=test.x, weights=test.weights, 
+lasso4.test.yhat.labels <- predict(cv.fit.lasso4.misclass, newx=test.x, 
                                    s='lambda.1se', type='class')
+
+# lower cutoff labels for train
+lasso4.train.yhat.labels.lowCutoff <- lasso4.train.yhat
+lasso4.train.yhat.labels.lowCutoff[lasso4.train.yhat.labels.lowCutoff > 0.27] <- 1
+lasso4.train.yhat.labels.lowCutoff[lasso4.train.yhat.labels.lowCutoff <= 0.27] <- 0
+
+# lower cutoff labels for test
+lasso4.test.yhat.labels.lowCutoff <- lasso4.test.yhat
+lasso4.test.yhat.labels.lowCutoff[lasso4.test.yhat.labels.lowCutoff > 0.27] <- 1
+lasso4.test.yhat.labels.lowCutoff[lasso4.test.yhat.labels.lowCutoff <= 0.27] <- 0
 
 # confusion matrix for train
 lasso4.train.conf.mat <- confusionMatrix(as.factor(lasso4.train.yhat.labels), as.factor(train.y),
@@ -323,6 +387,15 @@ lasso4.train.conf.mat <- confusionMatrix(as.factor(lasso4.train.yhat.labels), as
 # confusion matrix for test
 lasso4.test.conf.mat <- confusionMatrix(as.factor(lasso4.test.yhat.labels), as.factor(test.y),
                                         positive='1')
+
+# confusion matrix for train, low cutoff
+lasso4.train.conf.mat.lowcut <- confusionMatrix(as.factor(lasso4.train.yhat.labels.lowCutoff), as.factor(train.y),
+                                                positive='1')
+
+# confusion matrix for test, low cutoff
+lasso4.test.conf.mat.lowcut <- confusionMatrix(as.factor(lasso4.test.yhat.labels.lowCutoff), as.factor(test.y),
+                                               positive='1')
+
 
 ##### train ROC curve #####
 # make a copy of train set
@@ -366,9 +439,9 @@ abline(v=log(cv.fit.lasso2.misclass$lambda.min), lty='dashed', lwd=3, col='hotpi
 abline(v=log(cv.fit.lasso3.dev$lambda.1se), lty='dashed', lwd=3, col='blue3')
 abline(v=log(cv.fit.lasso4.misclass$lambda.1se), lty='dashed', lwd=3, col='darkcyan')
 legend('bottomleft', c(expression(lambda['min, dev'] ~ 'lasso1'),
-                     expression(lambda['min, misclass'] ~ 'lasso2'),
-                     expression(lambda['1se, dev'] ~ 'lasso3'),
-                     expression(lambda['1se, misclass'] ~ 'lasso4')),
+                       expression(lambda['min, misclass'] ~ 'lasso2'),
+                       expression(lambda['1se, dev'] ~ 'lasso3'),
+                       expression(lambda['1se, misclass'] ~ 'lasso4')),
        col=c('darkorange2', 'hotpink2', 'blue3', 'darkcyan'),
        lty='dashed', lwd=3, cex=1.3)
 dev.off()
@@ -398,8 +471,8 @@ arrows(cv.fit.lasso1.dev$lambda, cv.fit.lasso1.dev$cvm-cv.fit.lasso1.dev$cvsd,
        length=0.05, angle=90, code=3, col='gray50')
 abline(v=cv.fit.lasso1.dev$lambda.min, lty='dashed', lwd=3, col='darkorange2')
 abline(v=cv.fit.lasso1.dev$lambda.1se, lty='dashed', lwd=3, col='blue3')
-text(0.097, 3.0, labels=expression(lambda[min] ~ '= 0.060'), cex=1.7)
-text(0.172, 3.0, labels=expression(lambda['1se'] ~ '= 0.109'), cex=1.7)
+text(0.097, 3.0, labels=expression(lambda[min] ~ '= 0.113'), cex=1.7)
+text(0.172, 3.0, labels=expression(lambda['1se'] ~ '= 0.189'), cex=1.7)
 dev.off()
 
 ## ~*~*~*~* MISCLASS VERSUS LAMBDA - ADD 1SE DASHED LINES (10.18) *~*~*~*~ ##
@@ -415,8 +488,8 @@ arrows(cv.fit.lasso2.misclass$lambda, cv.fit.lasso2.misclass$cvm-cv.fit.lasso2.m
        length=0.05, angle=90, code=3, col='gray50', xlim=c(-0.001, 0.20))
 abline(v=cv.fit.lasso2.misclass$lambda.min, lty='dashed', lwd=3, col='hotpink2')
 abline(v=cv.fit.lasso2.misclass$lambda.1se, lty='dashed', lwd=3, col='darkcyan')
-text(0.0055, 0.295, labels=expression(lambda[min] ~ '= 0.028'), cex=1.7)
-text(0.065, 0.150, labels=expression(lambda['1se'] ~ '= 0.067'), cex=1.7)
+text(0.0055, 0.295, labels=expression(lambda[min] ~ '= 0.021'), cex=1.7)
+text(0.065, 0.150, labels=expression(lambda['1se'] ~ '= 0.047'), cex=1.7)
 dev.off()
 
 '
@@ -450,6 +523,34 @@ print(table08, hline.after = c(0,1))
 
 print.xtable(table08, type='latex', file='data/table08.tex')
 
+### low cutoffs
+lasso1.train.conf.mat.lowcut
+
+train.1.df <- data.frame(c(30,13),
+                         c(11,26))
+colnames(train.1.df) <- c('No Dementia', 'Dementia')
+rownames(train.1.df) <- c('No Dementia', 'Dementia')
+
+table07.1 <- xtable(train.1.df)
+align(table07.1) <- 'r|c|c'
+digits(table07.1) <- 0
+print(table07.1, hline.after = c(0,1))
+
+print.xtable(table07.1, type='latex', file='data/table07.1.tex')
+
+lasso1.test.conf.mat.lowcut
+test.1.df <- data.frame(c(9,5),
+                        c(3,10))
+colnames(test.1.df) <- c('No Dementia', 'Dementia')
+rownames(test.1.df) <- c('No Dementia', 'Dementia')
+
+table08.1 <- xtable(test.1.df)
+align(table08.1) <- 'r|c|c'
+digits(table08.1) <- 0
+print(table08.1, hline.after = c(0,1))
+
+print.xtable(table08.1, type='latex', file='data/table08.1.tex')
+
 # confusion matrices for Model 2
 lasso2.train.conf.mat
 train.2.df <- data.frame(c(42,1),
@@ -476,6 +577,34 @@ digits(table10) <- 0
 print(table10, hline.after = c(0,1))
 
 print.xtable(table10, type='latex', file='data/table10.tex')
+
+### low cutoffs
+lasso2.train.conf.mat.lowcut
+train.2.df <- data.frame(c(35,8),
+                         c(8,29))
+colnames(train.2.df) <- c('No Dementia', 'Dementia')
+rownames(train.2.df) <- c('No Dementia', 'Dementia')
+
+table09.1 <- xtable(train.2.df)
+align(table09.1) <- 'r|c|c'
+digits(table09.1) <- 0
+print(table09.1, hline.after = c(0,1))
+
+print.xtable(table09.1, type='latex', file='data/table09.1.tex')
+
+lasso2.test.conf.mat.lowcut
+test.2.df <- data.frame(c(7,7),
+                        c(6,7))
+colnames(test.2.df) <- c('No Dementia', 'Dementia')
+rownames(test.2.df) <- c('No Dementia', 'Dementia')
+
+table10.1 <- xtable(test.2.df)
+align(table10.1) <- 'r|c|c'
+digits(table10.1) <- 0
+print(table10.1, hline.after = c(0,1))
+
+print.xtable(table10.1, type='latex', file='data/table10.1.tex')
+
 
 # confusion matrices for Model 3
 lasso3.train.conf.mat
@@ -504,6 +633,33 @@ print(table12, hline.after = c(0,1))
 
 print.xtable(table12, type='latex', file='data/table12.tex')
 
+### low cutoff confusion matrices, model 3
+lasso3.train.conf.mat.lowcut
+train.3.df <- data.frame(c(37,6),
+                         c(14,23))
+colnames(train.3.df) <- c('No Dementia', 'Dementia')
+rownames(train.3.df) <- c('No Dementia', 'Dementia')
+
+table11.1 <- xtable(train.3.df)
+align(table11.1) <- 'r|c|c'
+digits(table11.1) <- 0
+print(table11.1, hline.after = c(0,1))
+
+print.xtable(table11.1, type='latex', file='data/table11.1.tex')
+
+lasso3.test.conf.mat.lowcut
+test.3.df <- data.frame(c(12,2),
+                        c(3,10))
+colnames(test.3.df) <- c('No Dementia', 'Dementia')
+rownames(test.3.df) <- c('No Dementia', 'Dementia')
+
+table12.1 <- xtable(test.3.df)
+align(table12.1) <- 'r|c|c'
+digits(table12.1) <- 0
+print(table12.1, hline.after = c(0,1))
+
+print.xtable(table12.1, type='latex', file='data/table12.1.tex')
+
 # confusion matrices for Model 4
 lasso4.train.conf.mat
 train.4.df <- data.frame(c(43,0),
@@ -531,3 +687,29 @@ print(table14, hline.after = c(0,1))
 
 print.xtable(table14, type='latex', file='data/table14.tex')
 
+### model 4, low cutoff confusion matrices
+lasso4.train.conf.mat.lowcut
+train.4.df <- data.frame(c(34,9),
+                         c(9,27))
+colnames(train.4.df) <- c('No Dementia', 'Dementia')
+rownames(train.4.df) <- c('No Dementia', 'Dementia')
+
+table13.1 <- xtable(train.4.df)
+align(table13.1) <- 'r|c|c'
+digits(table13.1) <- 0
+print(table13.1, hline.after = c(0,1))
+
+print.xtable(table13.1, type='latex', file='data/table13.1.tex')
+
+lasso4.test.conf.mat.lowcut
+test.4.df <- data.frame(c(9,5),
+                        c(7,6))
+colnames(test.4.df) <- c('No Dementia', 'Dementia')
+rownames(test.4.df) <- c('No Dementia', 'Dementia')
+
+table14.1 <- xtable(test.4.df)
+align(table14.1) <- 'r|c|c'
+digits(table14.1) <- 0
+print(table14.1, hline.after = c(0,1))
+
+print.xtable(table14.1, type='latex', file='data/table14.1.tex')
