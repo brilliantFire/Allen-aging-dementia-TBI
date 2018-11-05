@@ -665,5 +665,8 @@ final_drops <- c('dsm_iv_clinical_diagnosis',
 
 data_imp_final <- data_imp[ , !names(data_imp) %in% final_drops]
 
+data_imp_final$act_demented <- as.numeric(data_imp_final$act_demented)
+data_imp_final$act_demented[data_imp_final$act_demented == 2] <- 0
+
 write.csv(data_imp_final, file='data/final_dataset_cart_imputed.csv')
 saveRDS(data_imp_final, file='data/final_dataset_cart_imputed.Rds')
